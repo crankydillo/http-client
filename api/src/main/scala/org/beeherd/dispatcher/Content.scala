@@ -49,7 +49,9 @@ case class HtmlContent(val str: String) extends Content("text/html", str.getByte
 }
 
 // TODO: Use this on the Response side.
-case class XmlContent(val xml: scala.xml.Node) extends Content("text/xml", xml.toString.getBytes("UTF-8").length
+case class XmlContent(
+  xml: scala.xml.Node
+) extends Content("text/xml", xml.toString.getBytes("UTF-8").length
     ) {
   override def createStream = {
     val bytes = xml.toString.getBytes("UTF-8");

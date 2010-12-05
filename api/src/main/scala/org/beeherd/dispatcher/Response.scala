@@ -16,19 +16,25 @@ import org.xml.sax.InputSource;
 
 // The return type of RequestHandler.handle(Request)
 // TODO: Much of this could be shared with Request....
-class Response(val code: Int, val content: Option[Content], someHeaders: Option[List[(String, String)]]) {
+class Response(val code: Int
+  , val content: Option[Content]
+  , hheaders: List[(String, String)]
+) {
   override def toString = "Response (Code : " + code + "; Content: " + content + "; Headers: " + headers + ")";
 
   // I'm doing this to add the content length if it wasn't specified.  I'm not
   // sure how I feel about this.
-  def headers: Option[List[(String, String)]] = {
+  def headers: List[(String, String)] = {
     // Can you have more than one header with the same name???
-    val contentHeaders = content.map { c =>
-      List("Content-Length" -> c.length.toString,
-          "Content-Type"   -> c.ctype)}
-      someHeaders.map { sh =>
-      sh ++ contentHeaders.getOrElse(List())
-    } orElse contentHeaders
+    val contentHeaders = content match {
+      case Some(c) => 
+        List(
+          "Content-Length" -> c.length.toString
+          , "Content-Type"   -> c.ctype
+        )
+      case None => Nil
+    }
+    contentHeaders ++ hheaders
   }
 
   /**
@@ -41,7 +47,7 @@ class Response(val code: Int, val content: Option[Content], someHeaders: Option[
       else
         name.equals(_)
 
-    headers.getOrElse(List()).find { p => sameName(p._1) }.map(_._2)
+    headers.find { p => sameName(p._1) }.map(_._2)
 
   }
 
@@ -53,65 +59,65 @@ class Response(val code: Int, val content: Option[Content], someHeaders: Option[
 
 // Case classes appear to be controversial.  You can probably safely think of
 // these as extensions that allow pattern matching.
-case class OkResponse extends Response(200, None, None)
+case class OkResponse extends Response(200, None, Nil)
 
 case class CreatedResponse(
     url: String
     , cntent: Option[Content]
-  ) extends Response(201, cntent, Some(List(("Location", url)))) {
+  ) extends Response(201, cntent, List(("Location", url))) {
 }
 object CreatedResponse {
   def apply(url: String): CreatedResponse = CreatedResponse(url, None)
 }
 
 case class XmlResponse(xml: scala.xml.Node) 
-extends Response(200, Some(XmlContent(xml)), None)
+extends Response(200, Some(XmlContent(xml)), Nil)
 
 case class XHtmlResponse(xml: scala.xml.Node) 
-extends Response(200, Some(XHtmlContent(xml)), None)
+extends Response(200, Some(XHtmlContent(xml)), Nil)
 
 case class HtmlResponse(str: String) 
-extends Response(200, Some(HtmlContent(str)), None)
+extends Response(200, Some(HtmlContent(str)), Nil)
 
-case class StringResponse(str: String) extends Response(200, Some(StringContent(str, "text/plain")), None)
+case class StringResponse(str: String) extends Response(200, Some(StringContent(str, "text/plain")), Nil)
 
 case class JsonResponse(xml: scala.xml.Node) extends Response(200,
-    Some(StringContent(XMLJsonTransformer.transform(xml), "application/json")), None
+    Some(StringContent(XMLJsonTransformer.transform(xml), "application/json")), Nil
   )
 
 case class ZipResponse(bytes: Array[Byte]) extends Response(200,
-    Some(ZipContent(bytes)), None
+    Some(ZipContent(bytes)), Nil
   )
 
 case class ByteResponse(bytes: Array[Byte]) extends Response(200,
-    Some(ByteArrayContent(bytes)), None
+    Some(ByteArrayContent(bytes)), Nil
   )
 
 case class StreamedResponse(val ctent: StreamedContent) extends Response(200,
-    Some(ctent), None
+    Some(ctent), Nil
   )
     
-case class NotFoundResponse extends Response(404, None, None)
+case class NotFoundResponse extends Response(404, None, Nil)
 
 case class ForbiddenResponse(msg: String) extends Response(403, 
-    Some(StringContent(msg, "text/plain")), None
+    Some(StringContent(msg, "text/plain")), Nil
   )
 
 case class UnauthorizedResponse(msg: String) extends Response(401,
-    Some(StringContent(msg, "text/plain")), None
+    Some(StringContent(msg, "text/plain")), Nil
   )
 
 case class MethodNotAllowedResponse(supportedOps: List[String])
 extends Response(405, None, {
       if (supportedOps == null || supportedOps.length == 0) {
-        None
+        Nil
       } else {
         // todo: use Enum???
         var opStr = "";
         for (op <- supportedOps)
           opStr = opStr + ", " + op;
         opStr = opStr.substring(2)
-        Some(List(("Allow", opStr)))
+        List(("Allow", opStr))
       }
     }
   )
@@ -125,7 +131,7 @@ object InternalErrorResponse {
   }
 }
 case class InternalErrorResponse(message: String) 
-extends Response(500, Some(StringContent(message, "text/plain")), None)
+extends Response(500, Some(StringContent(message, "text/plain")), Nil)
 
 
 object XMLJsonTransformer {
@@ -259,6 +265,5 @@ object XMLJsonTransformer {
       transformer.transform(source, out);
       str.toString;
   }
-
 }
 
