@@ -17,7 +17,51 @@ class HttpRequest(
 
 object HttpRequest {
 
-  def unapply(request: HttpRequest): Option[(List[String], RequestMethod.Value)] = 
-    Request.unapply(request)
+  def unapply(request: HttpRequest): Option[(List[String], RequestMethod.Value)] = {
+    if (request == null)
+      return None
+    val method = request.method
+    if (method == null)
+      return None
+    val path = request.path
+    if (path == null)
+      return Some((Nil, method))
+    val trimmed = path.path
+    if (trimmed.length == 0) {
+      return Some((Nil, method))
+    }
+    Some((trimmed.split("/").toList, method))
+  }
 }
 
+object RequestMethod extends Enumeration {
+  val Get, Post, Put, Delete = Value
+
+  def create(str: String): RequestMethod.Value = {
+    if (str == null || str.trim.length == 0)
+      throw new IllegalArgumentException("The request method must not be null or the empty string.");
+    if (str.equalsIgnoreCase("get"))
+      return RequestMethod.Get;
+    if (str.equalsIgnoreCase("post"))
+      return RequestMethod.Post;
+    if (str.equalsIgnoreCase("put"))
+      return RequestMethod.Put;
+    if (str.equalsIgnoreCase("delete"))
+      return RequestMethod.Delete;
+    throw new IllegalArgumentException(str + " is not supported.")
+  }
+}
+
+object Path {
+  def unapply(path: String): Option[List[String]] = {
+    if (path == null) {
+      return None
+    }
+    val trimmed = path.trim
+    if (trimmed.length == 0) {
+      return None
+    }
+    Some(path.split("/").toList)
+  }
+}
+class Path(val path: String)
