@@ -3,7 +3,7 @@ package org.beeherd.dispatcher.http
 import org.beeherd.dispatcher._
 
 class HttpRequest(
-    val domain: String
+    val host: String
     , val path: Path = new Path("/")
     , val method: RequestMethod.Value = RequestMethod.Get
     , val headers: Map[String, List[String]] = Map()
@@ -12,7 +12,7 @@ class HttpRequest(
     , val protocol: String = "http"
     , val port: Int = 80
   ) extends Request {
-  lazy val url = protocol + "://" + domain + ":" + port + path.path
+  lazy val url = protocol + "://" + host + ":" + port + path.path
 }
 
 object HttpRequest {
