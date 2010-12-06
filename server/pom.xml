@@ -16,17 +16,17 @@ specific language governing permissions and limitations
 under the License.
 --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.beeherd.dispatcher</groupId>
-  <artifactId>server-side</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <groupId>org.beeherd.http</groupId>
+  <artifactId>server</artifactId>
+  <version>0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Your Cool Project</name>
+  <name>Server-Side Dispatching</name>
   <dependencies>
 
     <dependency>
       <groupId>org.beeherd.dispatcher</groupId>
       <artifactId>http</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>0.1-SNAPSHOT</version>
     </dependency>
 
     <dependency>
