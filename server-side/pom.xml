@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2010 Samuel Cox
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied. See the License for the
+specific language governing permissions and limitations
+under the License.
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.beeherd.dispatcher</groupId>
+  <artifactId>server-side</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>Your Cool Project</name>
+  <dependencies>
+
+    <dependency>
+      <groupId>org.beeherd.dispatcher</groupId>
+      <artifactId>http</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>2.5</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>2.8.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>2.8.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>  
+      <version>1.8.5</version> 
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.scala-tools.testing</groupId>
+      <artifactId>specs_2.8.0</artifactId>
+      <version>1.6.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.4</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>scala-tools.org - snapshots</id>
+      <name>Scala-Tools Maven2 Repository - snapshots</name>
+      <url>http://scala-tools.org/repo-snapshots</url>
+    </repository>
+  </repositories>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- The following will run your BDD tests.  Use mvn exec:exec -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1</version>
+        <configuration>
+          <executable>java</executable>
+          <classpathScope>test</classpathScope>
+          <arguments>
+            <!--<argument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8001</argument>-->
+            <argument>-classpath</argument>
+            <classpath />
+            <!-- SpecsRunner runs all the *Spec.class -->
+            <argument>org.beeherd.dispatcher.http.server.SpecsRunner</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>
