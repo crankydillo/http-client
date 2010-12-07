@@ -4,7 +4,7 @@ import org.beeherd.dispatcher._
 
 class HttpRequest(
     val host: String
-    , val path: Path = new Path("/")
+    , val path: String = "/"
     , val method: RequestMethod.Value = RequestMethod.Get
     , val headers: Map[String, List[String]] = Map()
     , val content: Option[Content] = None
@@ -12,7 +12,7 @@ class HttpRequest(
     , val protocol: String = "http"
     , val port: Int = 80
   ) extends Request {
-  lazy val url = protocol + "://" + host + ":" + port + path.path
+  lazy val url = protocol + "://" + host + ":" + port + path
 }
 
 object HttpRequest {
@@ -26,11 +26,10 @@ object HttpRequest {
     val path = request.path
     if (path == null)
       return Some((Nil, method))
-    val trimmed = path.path
-    if (trimmed.length == 0) {
+    if (path.length == 0) {
       return Some((Nil, method))
     }
-    Some((trimmed.split("/").toList, method))
+    Some((path.split("/").toList, method))
   }
 }
 
@@ -51,17 +50,3 @@ object RequestMethod extends Enumeration {
     throw new IllegalArgumentException(str + " is not supported.")
   }
 }
-
-object Path {
-  def unapply(path: String): Option[List[String]] = {
-    if (path == null) {
-      return None
-    }
-    val trimmed = path.trim
-    if (trimmed.length == 0) {
-      return None
-    }
-    Some(path.split("/").toList)
-  }
-}
-class Path(val path: String)
