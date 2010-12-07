@@ -29,7 +29,8 @@ object HttpRequest {
     if (path.length == 0) {
       return Some((Nil, method))
     }
-    Some((path.split("/").toList, method))
+    val tmp = if (path.startsWith("/")) path.drop(1) else path
+    Some((tmp.split("/").toList, method))
   }
 }
 
