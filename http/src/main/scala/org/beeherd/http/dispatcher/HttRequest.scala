@@ -1,4 +1,4 @@
-package org.beeherd.dispatcher.http
+package org.beeherd.http.dispatcher
 
 import org.beeherd.dispatcher._
 

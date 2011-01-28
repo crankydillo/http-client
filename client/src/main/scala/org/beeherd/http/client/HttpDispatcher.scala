@@ -1,4 +1,4 @@
-package org.beeherd.dispatcher.http
+package org.beeherd.http.client
 
 import java.io._
 import java.text.DecimalFormat
@@ -7,13 +7,14 @@ import java.util.concurrent.TimeUnit
 import org.apache.commons.io.IOUtils
 import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
 import org.apache.http.client.{ResponseHandler, HttpClient => ApacheHttpClient, HttpResponseException}
-import org.apache.http.client.methods.{HttpGet, HttpPost, HttpDelete}
+import org.apache.http.client.methods.{HttpGet, HttpPost, HttpPut, HttpDelete}
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{BasicResponseHandler, DefaultHttpClient}
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
 import org.apache.http.params.{BasicHttpParams, HttpConnectionParams}
 
 import org.beeherd.dispatcher._
+import org.beeherd.http.dispatcher._
 
 object HttpDispatcher {
   /**
@@ -46,6 +47,8 @@ class HttpDispatcher(
     , showProgress: Boolean = false
   ) {
 
+  private val converter = new HttpConverter(showProgress); // compose!
+
   def dispatch(req: HttpRequest): Response = {
     try {
       req match {
@@ -62,10 +65,115 @@ class HttpDispatcher(
         }
       }
       case e:Exception => {
-        e.printStackTrace
         InternalErrorResponse(e);
       }
 
+    }
+  }
+
+  private def get(req: HttpRequest): Response = {
+    val meth = new HttpGet(req.url)
+
+    try {
+      val params = meth.getParams;
+      req.params.foreach {e => params.setParameter(e._1, e._2)}
+      val response = client.execute(meth);
+      converter.convert(response);
+
+    } catch {
+      case e:Exception => {
+        meth.abort;
+        throw e
+      }
+    }
+  }
+
+  private def post(req: HttpRequest): Response = {
+    val meth = new HttpPost(req.url)
+    try {
+      val params = meth.getParams;
+      req.params.foreach {e => params.setParameter(e._1, e._2)}
+      val entity = 
+        if (req.content != None) {
+        req.content.get match {
+          case StringContent(str, ctype) => new StringEntity(str, ctype);
+          case XmlContent(xml) => {
+            meth.addHeader("Content-Type", "text/xml");
+            new StringEntity(xml.toString, "UTF-8");
+          }
+          case _ => new StringEntity("");
+        }
+      } else {
+        new StringEntity("");
+      }
+      meth.setEntity(entity);
+      val handler = new BasicResponseHandler();
+      val response = client.execute(meth);
+      val body = handler.handleResponse(response);
+      if (response.getEntity != null)
+        response.getEntity.consumeContent;
+      response.getHeaders("Location") match {
+        case Array(fst, rest @_*) => CreatedResponse(fst.getValue)
+        case _ => OkResponse()
+      }
+    } catch {
+      case e:Exception => {
+        meth.abort;
+        throw e;
+      }
+    }
+  }
+
+  private def put(req: HttpRequest): Response = {
+    val meth = new HttpPut(req.url)
+    try {
+      val params = meth.getParams;
+      req.params.foreach {e => params.setParameter(e._1, e._2)}
+      val entity = 
+        if (req.content != None) {
+        req.content.get match {
+          case StringContent(str, ctype) => new StringEntity(str, ctype);
+          case XmlContent(xml) => {
+            meth.addHeader("Content-Type", "text/xml");
+            new StringEntity(xml.toString, "UTF-8");
+          }
+          case _ => new StringEntity("");
+        }
+      } else {
+        new StringEntity("");
+      }
+      meth.setEntity(entity);
+      val handler = new BasicResponseHandler();
+      val response = client.execute(meth);
+      val body = handler.handleResponse(response);
+      if (response.getEntity != null)
+        response.getEntity.consumeContent;
+      response.getHeaders("Location") match {
+        case Array(fst, rest @_*) => CreatedResponse(fst.getValue)
+        case _ => OkResponse()
+      }
+    } catch {
+      case e:Exception => {
+        meth.abort;
+        throw e;
+      }
+    }
+  }
+
+  private def delete(req: HttpRequest): Response = {
+    val meth = new HttpDelete(req.url);
+    try {
+      val handler = new BasicResponseHandler();
+      val response = client.execute(meth);
+      if (response.getEntity != null)
+        response.getEntity.consumeContent;
+      val body = handler.handleResponse(response);
+      OkResponse()
+    } catch {
+      case e:Exception => {
+        meth.abort;
+        throw e;
+      }
     }
   }
 
@@ -148,146 +256,5 @@ class HttpDispatcher(
       try {out.close()} catch {case e:Exception => {}}
     }
 
-  }
-
-
-  private def get(req: HttpRequest): Response = {
-    val meth = new HttpGet(req.url)
-
-    try {
-      val params = meth.getParams;
-      req.params.foreach {e => params.setParameter(e._1, e._2)}
-      val response = client.execute(meth);
-
-      def getString: String = {
-        val handler = new BasicResponseHandler();
-        val str = handler.handleResponse(response);
-        if (response.getEntity != null)
-          response.getEntity.consumeContent;
-        str
-      }
-
-      def getBytes(): Array[Byte] = {
-        if (response.getEntity != null) {
-          var in: InputStream = null;
-          var out: OutputStream = null;
-          try {
-            val in = response.getEntity.getContent;
-            val out = new ByteArrayOutputStream();
-            if (showProgress) {
-              val contentLengthOpt = {
-                val header = response.getFirstHeader("Content-Length");
-                if (header == null)
-                  None
-                else 
-                  try {
-                    Some(new DecimalFormat("#.##").format(
-                      header.getValue.trim.toLong / 1024.0))
-                  } catch {
-                    case _ => None
-                  }
-              }
-              println();
-              val ending = "/" + contentLengthOpt.getOrElse("???")
-              var ctr = 0;
-              var lastPrint = "0";
-              print(lastPrint + ending);
-              var abyte = in.read();
-              while (abyte != -1) {
-                if (ctr % 1024 == 0) {
-                  print("\r"); // guaranteed to always get bigger...
-                  lastPrint = (ctr / 1024) + ""
-                  print(lastPrint + ending);
-                }
-                abyte = in.read
-                out.write(abyte);
-                ctr = ctr + 1;
-              }
-            } else
-              IOUtils.copy(in, out);
-
-            out.flush
-            out.close
-            out.toByteArray
-          } finally {
-            if (in != null) 
-              try {in.close} catch { case e:Exception => {}}
-          }
-
-        } else {
-          Array()
-        }
-      }
-
-      val contentType = response.getFirstHeader("Content-Type").getValue.trim;
-      if (contentType == null) {
-        StringResponse("")
-      } else if (contentType.startsWith("text/xml") || contentType.startsWith("application/xml")) {
-        val xml = scala.xml.XML.load(new java.io.StringReader(getString));
-        XmlResponse(xml)
-      } else if ("text/html" == contentType) {
-        HtmlResponse(getString)
-      } else if ("application/zip" == contentType) {
-        ZipResponse(getBytes())
-      } else {
-        StringResponse(getString);
-      }
-    } catch {
-      case e:Exception => {
-        meth.abort;
-        throw e
-      }
-    }
-  }
-
-  private def post(req: HttpRequest): Response = {
-    val meth = new HttpPost(req.url)
-    try {
-      val params = meth.getParams;
-      req.params.foreach {e => params.setParameter(e._1, e._2)}
-      val entity = 
-        if (req.content != None) {
-        req.content.get match {
-          case StringContent(str, ctype) => new StringEntity(str, ctype);
-          case XmlContent(xml) => {
-            meth.addHeader("Content-Type", "text/xml");
-            new StringEntity(xml.toString, "UTF-8");
-          }
-          case _ => new StringEntity("");
-        }
-      } else {
-        new StringEntity("");
-      }
-      meth.setEntity(entity);
-      val handler = new BasicResponseHandler();
-      val response = client.execute(meth);
-      val body = handler.handleResponse(response);
-      if (response.getEntity != null)
-        response.getEntity.consumeContent;
-      val location = response.getHeaders("Location")(0);
-      CreatedResponse(location.getValue);
-    } catch {
-      case e:Exception => {
-        meth.abort;
-        throw e;
-      }
-    }
-  }
-
-  private def delete(req: HttpRequest): Response = {
-    val meth = new HttpDelete(req.url);
-    try {
-      val handler = new BasicResponseHandler();
-      val response = client.execute(meth);
-      if (response.getEntity != null)
-        response.getEntity.consumeContent;
-      val body = handler.handleResponse(response);
-      OkResponse()
-    } catch {
-      case e:Exception => {
-        meth.abort;
-        throw e;
-      }
-    }
   }
 }

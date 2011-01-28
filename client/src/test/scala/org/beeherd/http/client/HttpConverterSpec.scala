@@ -14,23 +14,17 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.beeherd.http.dispatcher
+package org.beeherd.http.client
 
 import org.specs._
 import org.specs.runner.JUnit4
 
-class HttpRequestSpecTest extends JUnit4(HttpRequestSpec)
-object HttpRequestSpec extends Specification {
-  "An HttpRequest" should {
-    "be pattern matchable based on the path and method" in {
-      val req = new HttpRequest("boo.com", "/some/path", RequestMethod.Get);
+class HttpConverterSpecTest extends JUnit4(HttpConverterSpec)
+object HttpConverterSpec extends Specification {
 
-      req match {
-        case HttpRequest("some" :: "path" :: Nil, RequestMethod.Get) => {
-          true must beTrue
-        }
-        case _ => false must beTrue
-      }
+  "The HttpConverter" should {
+    "convert an Apache HttpResponse into a Response" in {
+      // TODO 
     }
   }
 }

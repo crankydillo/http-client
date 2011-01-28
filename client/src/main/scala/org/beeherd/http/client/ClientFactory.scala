@@ -1,4 +1,4 @@
-package org.beeherd.dispatcher.http
+package org.beeherd.http.client
 
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.BasicHttpParams

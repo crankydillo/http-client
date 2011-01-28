@@ -23,7 +23,7 @@ import org.specs.runner.JUnit4
 import org.specs.mock.Mockito
 import org.mockito.Matchers._ 
 
-import org.beeherd.dispatcher.http._
+import org.beeherd.http.dispatcher._
 
 class RequestConverterSpecTest extends JUnit4(RequestConverterSpec)
 object RequestConverterSpec extends Specification with Mockito {

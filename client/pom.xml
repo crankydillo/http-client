@@ -96,14 +96,9 @@ under the License.
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.1</version>
         <configuration>
-          <executable>java</executable>
-          <classpathScope>test</classpathScope>
+          <mainClass>org.beeherd.http.client.App</mainClass>
           <arguments>
-            <!--<argument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8001</argument>-->
-            <argument>-classpath</argument>
-            <classpath />
-            <!-- SpecsRunner runs all the *Spec.class -->
-            <argument>org.beeherd.dispatcher.http.client.SpecsRunner</argument>
+            <argument>1</argument>
           </arguments>
         </configuration>
       </plugin>

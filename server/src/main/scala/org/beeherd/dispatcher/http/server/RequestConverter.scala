@@ -18,7 +18,7 @@ package org.beeherd.dispatcher.http.server
 
 import javax.servlet.http.HttpServletRequest
 
-import org.beeherd.dispatcher.http._
+import org.beeherd.http.dispatcher._
 
 class RequestConverter {
   import scala.collection.JavaConversions._;
