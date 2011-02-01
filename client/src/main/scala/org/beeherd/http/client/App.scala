@@ -48,10 +48,12 @@ object App {
       val dispatcher = new HttpDispatcher(client);
 
       val player = new RandomizingPlayer(new DelayingHttpPlayer(dispatcher, 3, true));
-      val exerciser = new ExercisingClient(player, 15);
       try {
         val out = new BufferedWriter(new OutputStreamWriter(Console.out));
-        exerciser.exercise(Ops, out);
+        val exerciser = new ExercisingClient(player, 15, Ops, out);
+        val thread = new Thread(exerciser, "Exerciser");
+        thread.start();
+        thread.join();
         /*
         val lst = player.play(Ops);
         lst.foreach {resp =>

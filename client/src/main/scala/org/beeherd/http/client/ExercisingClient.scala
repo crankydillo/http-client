@@ -30,10 +30,12 @@ import org.beeherd.http.dispatcher._
 class ExercisingClient(
   player: HttpPlayer
   , secsToRun: Long
+  , operations: Seq[Operation]
+  , out: Writer
   , formatter: TrackedFormatter = new SimpleTrackedFormatter
-) {
+) extends Runnable {
 
-  def exercise(operations: Seq[Operation], out: Writer): Unit = {
+  def run(): Unit = {
     // Do I need a blocking queue for this???
     var end: Boolean = false;
 
@@ -43,17 +45,10 @@ class ExercisingClient(
         , secsToRun * 1000
       )
 
-    val thread = new Thread(new Runnable {
-          def run(): Unit = {
-            while (!end) {
-              val resp = player.play(operations);
-              resp.foreach {r => out.write(formatter.format(r) + "\n")}
-              out.flush();
-            }
-          }
-        }, "Exerciser"
-      );
-    thread.start();
-    thread.join();
+    while (!end) {
+      val resp = player.play(operations);
+      resp.foreach {r => out.write(formatter.format(r) + "\n")}
+      out.flush();
+    }
   }
 }
