@@ -30,6 +30,7 @@ import org.beeherd.http.dispatcher._
 class ExercisingClient(
   player: HttpPlayer
   , secsToRun: Long
+  , formatter: TrackedFormatter = new SimpleTrackedFormatter
 ) {
 
   def exercise(operations: Seq[Operation], out: Writer): Unit = {
@@ -46,7 +47,7 @@ class ExercisingClient(
           def run(): Unit = {
             while (!end) {
               val resp = player.play(operations);
-              resp.foreach {r => out.write(r.toString + "\n")};
+              resp.foreach {r => out.write(formatter.format(r) + "\n")}
               out.flush();
             }
           }
