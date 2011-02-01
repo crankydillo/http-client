@@ -77,6 +77,7 @@ class DelayingHttpPlayer(
 class Operation(
     val request: HttpRequest
     , val handler: Option[(Response => Seq[Operation])] = None
+    , val context: Option[String] = None
   )
 
 class Tracked()
