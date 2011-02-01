@@ -18,6 +18,8 @@ package org.beeherd.http.client
 
 import java.net.SocketTimeoutException
 
+import org.joda.time.DateTime
+
 import org.beeherd.dispatcher._
 import org.beeherd.http.dispatcher._
 
@@ -51,7 +53,6 @@ class DelayingHttpPlayer(
 
     def now = System.currentTimeMillis
 
-
     def fn(op: Operation) = {
       val start = now
       def timeout = Timeout(op.request.url, op.context, now - start)
@@ -84,7 +85,11 @@ class Operation(
     , val context: Option[String] = None
   )
 
-sealed abstract class Tracked(val url: String, val context: Option[String] = None)
+sealed abstract class Tracked(val url: String, val context: Option[String] = None) {
+  // this is pretty bad, but I'm going to do it to get an idea of when the
+  // request/response happened
+  val requestDate = new DateTime();
+}
 
 case class Timeout(
     override val url: String
@@ -131,7 +136,7 @@ class SimpleTrackedFormatter extends TrackedFormatter {
       case Timeout(_, _, t) => ("; " + t, "")
     }
 
-    tracked.url + ctx + time + code
+    tracked.requestDate + "; " + tracked.url + ctx + time + code
   }
 }
 
@@ -160,6 +165,12 @@ class XmlTrackedFormatter extends TrackedFormatter {
         case Timeout(_, _, t) => <timeout>{t}</timeout>
       }
 
-    prettyPrinter.format(<operation>{request}{response}</operation>)
+    prettyPrinter.format(
+        <operation>
+        <time>{tracked.requestDate}</time>
+        {request}
+        {response}
+      </operation>
+    )
   }
 }
