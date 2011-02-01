@@ -49,13 +49,17 @@ class DelayingHttpPlayer(
 
   def play(operations: Seq[Operation]): Seq[Tracked] = {
 
-    def fn(op: Operation) = {
-      try {
-        val start = System.currentTimeMillis;
-        val resp = dispatcher.dispatch(op.request);
-        val respTime = System.currentTimeMillis - start;
+    def now = System.currentTimeMillis
 
-        val tracked = DResponse(op.request.url, resp.code, respTime);
+
+    def fn(op: Operation) = {
+      val start = now
+      def timeout = Timeout(op.request.url, op.context, now - start)
+      try {
+        val resp = dispatcher.dispatch(op.request);
+        val respTime = now - start;
+
+        val tracked = DResponse(op.request.url, op.context, resp.code, respTime);
 
         op.handler match {
           case Some(h) => tracked +: h(resp).flatMap {op => play(Seq(op))}
@@ -63,8 +67,8 @@ class DelayingHttpPlayer(
         }
 
       } catch {
-        case cte: ConnectTimeoutException => Seq(Timeout())
-        case ste: SocketTimeoutException => Seq(Timeout())
+        case cte: ConnectTimeoutException => Seq(timeout)
+        case ste: SocketTimeoutException => Seq(timeout)
       }
     }
 
@@ -80,24 +84,20 @@ class Operation(
     , val context: Option[String] = None
   )
 
-class Tracked()
-case class Timeout() extends Tracked {
-  override def toString = "Timeout"
-}
+sealed abstract class Tracked(val url: String, val context: Option[String] = None)
+
+case class Timeout(
+    override val url: String
+    , override val context: Option[String]
+    , time: Long
+  ) extends Tracked(url, context)
+
 case class DResponse(
-    val url: String
-    , val code: Int
-    , val responseTime: Long // in milliseconds
-  ) extends Tracked {
-  override def toString = url + "; " + code + "; " + responseTime
-}
-
-class TrackedResponse(
-    val url: String
-    , val code: Int
-    , val responseTime: Long // in milliseconds
-  )
-
+    override val url: String
+    , override val context: Option[String]
+    , code: Int
+    , responseTime: Long // in milliseconds
+  ) extends Tracked(url, context)
 
 /**
 * A player that will randomized the top level operations.
@@ -111,4 +111,55 @@ class RandomizingPlayer(
 
   def play(operations: Seq[Operation]): Seq[Tracked] = 
     sequentialPlayer.play(scala.util.Random.shuffle(operations));
+}
+
+// Some formatting tools
+trait TrackedFormatter {
+  def format(tracked: Tracked): String
+}
+
+class SimpleTrackedFormatter extends TrackedFormatter {
+  def format(tracked: Tracked): String = {
+    val ctx = 
+      tracked.context match {
+        case Some(c) => "; " + c
+        case _ => ""
+      }
+
+    val (time, code) = tracked match {
+      case DResponse(_, _, c, t) => ("; " + t, "; " + c)
+      case Timeout(_, _, t) => ("; " + t, "")
+    }
+
+    tracked.url + ctx + time + code
+  }
+}
+
+class XmlTrackedFormatter extends TrackedFormatter {
+  private val prettyPrinter = new scala.xml.PrettyPrinter(500, 2)
+  def format(tracked: Tracked): String = {
+
+    val request = 
+      <request>
+        <url>{tracked.url}</url>
+        {
+          tracked.context match {
+            case Some(ctx) => <context>{ctx}</context>
+            case None => {}
+          }
+        }
+      </request>
+
+    val response = 
+      tracked match {
+        case DResponse(_, _, c, t) =>
+          <response>
+            <code>{c}</code>
+            <responseTime>{t}</responseTime>
+          </response>
+        case Timeout(_, _, t) => <timeout>{t}</timeout>
+      }
+
+    prettyPrinter.format(<operation>{request}{response}</operation>)
+  }
 }
