@@ -3,6 +3,9 @@ import sbt._
 import java.io._
 
 class Tools(info: ProjectInfo) extends DefaultProject(info) {
+  val mavenLocal = "Local Maven Repository" at 
+  "file://"+Path.userHome+"/.m2/repository"
+
   lazy val mkdir = task {args => 
     task {
       val path = args(0);

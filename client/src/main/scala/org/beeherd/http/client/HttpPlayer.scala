@@ -23,17 +23,21 @@ import org.beeherd.http.dispatcher._
 
 import org.apache.http.conn.ConnectTimeoutException
 
+trait HttpPlayer {
+  def play(operations: Seq[Operation]): Seq[Tracked]
+}
+
 /**
 * This class is provides a facility for issuing a bunch of Http Requests
 * synchronously 
 *
 * @author scox
 */
-class HttpPlayer(
+class DelayingHttpPlayer(
     dispatcher: HttpDispatcher
     , delay: Int = 0
     , randomizeDelay: Boolean = false
-  ) {
+  ) extends HttpPlayer {
 
   private def delayFn = 
     if (randomizeDelay) {
@@ -75,13 +79,17 @@ class Operation(
     , val handler: Option[(Response => Seq[Operation])] = None
   )
 
-case class Tracked()
-case class Timeout() extends Tracked
+class Tracked()
+case class Timeout() extends Tracked {
+  override def toString = "Timeout"
+}
 case class DResponse(
     val url: String
     , val code: Int
     , val responseTime: Long // in milliseconds
-  ) extends Tracked
+  ) extends Tracked {
+  override def toString = url + "; " + code + "; " + responseTime
+}
 
 class TrackedResponse(
     val url: String
@@ -98,58 +106,8 @@ class TrackedResponse(
 class RandomizingPlayer(
   sequentialPlayer: HttpPlayer
   , delay: Int = 0
-) {
+) extends HttpPlayer {
 
   def play(operations: Seq[Operation]): Seq[Tracked] = 
     sequentialPlayer.play(scala.util.Random.shuffle(operations));
-}
-
-import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
-import org.apache.http.client.{ResponseHandler, HttpClient => ApacheHttpClient, HttpResponseException}
-import org.apache.http.client.methods.{HttpGet, HttpPost, HttpPut, HttpDelete}
-import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.{BasicResponseHandler, DefaultHttpClient}
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
-import org.apache.http.params.{BasicHttpParams, HttpConnectionParams}
-
-object App {
-  def main(args: Array[String]): Unit = {
-    try {
-
-      val timeout = args match {
-        case Array(fst, snd @_*) => fst.toInt
-        case _ => 60000
-      }
-
-      val params = new BasicHttpParams();
-      HttpConnectionParams.setSoTimeout(params, timeout)
-      val schemeRegistry = new SchemeRegistry();
-      schemeRegistry.register(
-          new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-
-      val cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-      val client = new DefaultHttpClient(cm, params);
-      val dispatcher = new HttpDispatcher(client);
-      try {
-        val player = new RandomizingPlayer(new HttpPlayer(dispatcher, 10));
-        val lst = player.play(Ops);
-        lst.foreach {resp =>
-          resp match {
-            case Timeout() => println("The request timed out.");
-            case DResponse(url, code, time) => 
-              println(url + "; " + code + "; " + time)
-          }
-        }
-      } finally {
-        client.getConnectionManager.shutdown();
-      }
-    } catch {
-      case t:Throwable => t.printStackTrace
-    }
-  }
-
-  def Ops = Seq(
-      new Operation(new HttpRequest("www.cnn.com"))
-      , new Operation(new HttpRequest("www.slashdot.com"))
-    )
 }

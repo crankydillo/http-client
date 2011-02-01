@@ -16,8 +16,8 @@
 */
 package org.beeherd.http.client
 
-import scala.actors.Actor
-import scala.actors.Actor._
+import java.io.Writer
+import java.util.{Timer, TimerTask}
 
 import org.beeherd.dispatcher._
 import org.beeherd.http.dispatcher._
@@ -32,23 +32,27 @@ class ExercisingClient(
   , secsToRun: Long
 ) {
 
-  def exercise(operations: Seq[Operation]): Unit = {
-  }
-  
-  case class Stop
-  case class Start
+  def exercise(operations: Seq[Operation], out: Writer): Unit = {
+    // Do I need a blocking queue for this???
+    var end: Boolean = false;
 
-  class PlayingActor(operations: Seq[Operation]) extends Actor {
-    def act() {
-      loop {
-        react {
-          case Stop => exit()
-          case Start => {
-            val resp = player.play(operations);
-            println(resp)
+    val timer = new Timer();
+    timer.schedule(
+        new TimerTask { def run(): Unit = { end = true; timer.cancel() } }
+        , secsToRun * 1000
+      )
+
+    val thread = new Thread(new Runnable {
+          def run(): Unit = {
+            while (!end) {
+              val resp = player.play(operations);
+              resp.foreach {r => out.write(r.toString + "\n")};
+              out.flush();
+            }
           }
-        }
-      }
-    }
+        }, "Exerciser"
+      );
+    thread.start();
+    thread.join();
   }
 }
