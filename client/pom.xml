@@ -98,7 +98,6 @@ under the License.
         <configuration>
           <mainClass>org.beeherd.http.client.App</mainClass>
           <arguments>
-            <argument>1</argument>
           </arguments>
         </configuration>
       </plugin>

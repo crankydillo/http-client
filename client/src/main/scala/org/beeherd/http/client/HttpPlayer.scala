@@ -31,14 +31,28 @@ import org.apache.http.conn.ConnectTimeoutException
 */
 class HttpPlayer(
     dispatcher: HttpDispatcher
+    , delay: Int = 0
+    , randomizeDelay: Boolean = false
   ) {
+
+  private def delayFn = 
+    if (randomizeDelay) {
+      val randomizer = new java.util.Random();
+      () => randomizer.nextInt(delay) * 1000
+    } else {
+      () => delay * 1000
+    }
+
   def play(operations: Seq[Operation]): Seq[Tracked] = {
-    operations.flatMap {op =>
+
+    def fn(op: Operation) = {
       try {
         val start = System.currentTimeMillis;
         val resp = dispatcher.dispatch(op.request);
         val respTime = System.currentTimeMillis - start;
+
         val tracked = DResponse(op.request.url, resp.code, respTime);
+
         op.handler match {
           case Some(h) => tracked +: h(resp).flatMap {op => play(Seq(op))}
           case _ => Seq(tracked)
@@ -49,6 +63,10 @@ class HttpPlayer(
         case ste: SocketTimeoutException => Seq(Timeout())
       }
     }
+
+    // We don't want to sleep on the first
+    operations.take(1).flatMap { fn _ } ++
+    operations.drop(1).flatMap { Thread.sleep(delayFn()); fn _ }
   }
 }
 
@@ -70,6 +88,21 @@ class TrackedResponse(
     , val code: Int
     , val responseTime: Long // in milliseconds
   )
+
+
+/**
+* A player that will randomized the top level operations.
+*
+* @author scox
+*/
+class RandomizingPlayer(
+  sequentialPlayer: HttpPlayer
+  , delay: Int = 0
+) {
+
+  def play(operations: Seq[Operation]): Seq[Tracked] = 
+    sequentialPlayer.play(scala.util.Random.shuffle(operations));
+}
 
 import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
 import org.apache.http.client.{ResponseHandler, HttpClient => ApacheHttpClient, HttpResponseException}
@@ -98,12 +131,12 @@ object App {
       val client = new DefaultHttpClient(cm, params);
       val dispatcher = new HttpDispatcher(client);
       try {
-        val player = new HttpPlayer(dispatcher);
+        val player = new RandomizingPlayer(new HttpPlayer(dispatcher, 10));
         val lst = player.play(Ops);
         lst.foreach {resp =>
           resp match {
             case Timeout() => println("The request timed out.");
-            case DResponse(url, code, time) =>
+            case DResponse(url, code, time) => 
               println(url + "; " + code + "; " + time)
           }
         }
@@ -117,6 +150,6 @@ object App {
 
   def Ops = Seq(
       new Operation(new HttpRequest("www.cnn.com"))
-      , new Operation(new HttpRequest("www.cnn.com"))
+      , new Operation(new HttpRequest("www.slashdot.com"))
     )
 }
