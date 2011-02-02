@@ -160,14 +160,13 @@ class SimpleTrackedFormatter(sep: String = ", ") extends TrackedFormatter {
         case _ => ""
       }
 
-    val (time, code) = tracked match {
-      case DResponse(_, _, _, _, c, t, l) => (sep + l + sep + t + sep + c)
-      case Timeout(_, _, _, _, t) => (sep + t, "TIMEOUT")
+    val (code, time, contentLength) = tracked match {
+      case DResponse(_, _, _, _, c, t, l) => (sep + c, sep + t, sep + l)
+      case Timeout(_, _, _, _, t) => ("TIMEOUT", sep + t, "")
     }
 
-    tracked.requestDate + sep +
-    tracked.method + sep + tracked.url + 
-    sep + tracked.contentLength + ctx + time + code
+    tracked.requestDate + sep + tracked.method + sep + tracked.url + 
+    sep + tracked.contentLength + ctx + contentLength + time + code
   }
 }
 
