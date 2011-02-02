@@ -46,7 +46,7 @@ object SimpleTrackedParser {
     println("Number of Requests:  " + wholeFm.format(stats.numRequests));
     println("  Number of Errors:  " + wholeFm.format(stats.numErrors));
     println("    Number of Gets:  " + wholeFm.format(stats.numGets));
-    println("   Number of Posts:  " + wholeFm.format(stats.numGets));
+    println("   Number of Posts:  " + wholeFm.format(stats.numPosts));
     println("        Bytes Sent:  " + wholeFm.format(stats.bytesSent));
     println("    Bytes Received:  " + wholeFm.format(stats.bytesReceived));
     println();
@@ -57,7 +57,7 @@ object SimpleTrackedParser {
       println(" Number of Requests:  " + wholeFm.format(ctxStats.numRequests));
       println("   Number of Errors:  " + wholeFm.format(ctxStats.numErrors));
       println("     Number of Gets:  " + wholeFm.format(ctxStats.numGets));
-      println("    Number of Posts:  " + wholeFm.format(ctxStats.numGets));
+      println("    Number of Posts:  " + wholeFm.format(ctxStats.numPosts));
       println("         Bytes Sent:  " + wholeFm.format(ctxStats.bytesSent));
       println("     Bytes Received:  " + wholeFm.format(ctxStats.bytesReceived));
       println("  Avg Resp Time (s):  " + decFm.format(ctxStats.averageResponseTime / 1000.0));
