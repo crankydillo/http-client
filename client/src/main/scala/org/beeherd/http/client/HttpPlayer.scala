@@ -166,7 +166,7 @@ class SimpleTrackedFormatter(sep: String = ", ") extends TrackedFormatter {
     }
 
     tracked.requestDate + sep + tracked.method + sep + tracked.url + 
-    sep + ctx + tracked.contentLength  + contentLength + time + code
+    sep + ctx + sep + tracked.contentLength  + contentLength + time + code
   }
 }
 
