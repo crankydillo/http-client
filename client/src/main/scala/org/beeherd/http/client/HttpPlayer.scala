@@ -55,12 +55,29 @@ class DelayingHttpPlayer(
 
     def fn(op: Operation) = {
       val start = now
-      def timeout = Timeout(op.request.url, op.context, now - start)
+
+      def timeout = 
+        Timeout(
+          op.request.url
+          , op.request.method
+          , op.context
+          , op.request.content match { case Some(c) => c.length; case _ => 0 }
+          , now - start
+        )
+
       try {
         val resp = dispatcher.dispatch(op.request);
         val respTime = now - start;
 
-        val tracked = DResponse(op.request.url, op.context, resp.code, respTime);
+        val tracked = DResponse(
+            op.request.url
+            , op.request.method
+            , op.context
+            , op.request.content match { case Some(c) => c.length; case _ => 0 }
+            , resp.code
+            , respTime
+            , resp.content match { case Some(c) => c.length; case _ => 0 }
+          );
 
         op.handler match {
           case Some(h) => tracked +: h(resp).flatMap {op => play(Seq(op))}
@@ -85,7 +102,13 @@ class Operation(
     , val context: Option[String] = None
   )
 
-sealed abstract class Tracked(val url: String, val context: Option[String] = None) {
+// TODO: Seriously consider just carrying around Request/Response instances....
+sealed abstract class Tracked(
+    val url: String
+    , val method: RequestMethod.Value
+    , val context: Option[String] = None
+    , val contentLength: Long = 0
+  ) {
   // this is pretty bad, but I'm going to do it to get an idea of when the
   // request/response happened
   val requestDate = new DateTime();
@@ -93,16 +116,21 @@ sealed abstract class Tracked(val url: String, val context: Option[String] = Non
 
 case class Timeout(
     override val url: String
+    , override val method: RequestMethod.Value
     , override val context: Option[String]
+    , override val contentLength: Long = 0
     , time: Long
-  ) extends Tracked(url, context)
+  ) extends Tracked(url, method, context, contentLength)
 
 case class DResponse(
     override val url: String
+    , override val method: RequestMethod.Value
     , override val context: Option[String]
+    , override val contentLength: Long = 0
     , code: Int
     , responseTime: Long // in milliseconds
-  ) extends Tracked(url, context)
+    , responseContentLength: Long = 0
+  ) extends Tracked(url, method, context, contentLength)
 
 /**
 * A player that will randomized the top level operations.
@@ -123,20 +151,23 @@ trait TrackedFormatter {
   def format(tracked: Tracked): String
 }
 
-class SimpleTrackedFormatter extends TrackedFormatter {
+class SimpleTrackedFormatter(sep: String = ", ") extends TrackedFormatter {
+
   def format(tracked: Tracked): String = {
     val ctx = 
       tracked.context match {
-        case Some(c) => "; " + c
+        case Some(c) => sep + c
         case _ => ""
       }
 
     val (time, code) = tracked match {
-      case DResponse(_, _, c, t) => ("; " + t, "; " + c)
-      case Timeout(_, _, t) => ("; " + t, "")
+      case DResponse(_, _, _, _, c, t, l) => (sep + l + sep + t + sep + c)
+      case Timeout(_, _, _, _, t) => (sep + t, "TIMEOUT")
     }
 
-    tracked.requestDate + "; " + tracked.url + ctx + time + code
+    tracked.requestDate + sep +
+    tracked.method + sep + tracked.url + 
+    sep + tracked.contentLength + ctx + time + code
   }
 }
 
@@ -147,6 +178,8 @@ class XmlTrackedFormatter extends TrackedFormatter {
     val request = 
       <request>
         <url>{tracked.url}</url>
+        <method>{tracked.method}</method>
+        <contentLength>{tracked.contentLength}</contentLength>
         {
           tracked.context match {
             case Some(ctx) => <context>{ctx}</context>
@@ -157,12 +190,13 @@ class XmlTrackedFormatter extends TrackedFormatter {
 
     val response = 
       tracked match {
-        case DResponse(_, _, c, t) =>
+        case DResponse(_, _, _, _, c, t, l) =>
           <response>
             <code>{c}</code>
             <responseTime>{t}</responseTime>
+            <contentLength>{l}</contentLength>
           </response>
-        case Timeout(_, _, t) => <timeout>{t}</timeout>
+        case Timeout(_, _, _, _, t) => <timeout>{t}</timeout>
       }
 
     prettyPrinter.format(
