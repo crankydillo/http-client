@@ -16,11 +16,58 @@
 */
 package org.beeherd.http.client
 
+import java.io.File
+import java.text.DecimalFormat
+
 import scala.io.Source
 
 object SimpleTrackedParser {
 
-  def parseStats(file: java.io.File): Stats = {
+  def main(args: Array[String]): Unit = {
+    if (args.size != 1) {
+      println("Please specify the file.");
+      System.exit(1);
+    }
+
+    val file = new File(args(0));
+
+    if (!file.exists || file.isDirectory) {
+      println("The file must exist and not be a directory");
+      System.exit(1);
+    }
+      
+    val stats = parseStats(file);
+
+    val wholeFm = new DecimalFormat("#,##0");
+    val decFm = new DecimalFormat("#,##0.00");
+
+    println("Overall Statistics");
+    println("------------------");
+    println("Number of Requests:  " + wholeFm.format(stats.numRequests));
+    println("  Number of Errors:  " + wholeFm.format(stats.numErrors));
+    println("    Number of Gets:  " + wholeFm.format(stats.numGets));
+    println("   Number of Posts:  " + wholeFm.format(stats.numGets));
+    println("        Bytes Sent:  " + wholeFm.format(stats.bytesSent));
+    println("    Bytes Received:  " + wholeFm.format(stats.bytesReceived));
+    println();
+    stats.contextStats.map { case (ctx, ctxStats) =>
+      val name = if (ctx.trim == "") "UKNOWN" else ctx.trim;
+      println(name +            " Statistics");
+      println("-" * name.size + "-----------");
+      println(" Number of Requests:  " + wholeFm.format(ctxStats.numRequests));
+      println("   Number of Errors:  " + wholeFm.format(ctxStats.numErrors));
+      println("     Number of Gets:  " + wholeFm.format(ctxStats.numGets));
+      println("    Number of Posts:  " + wholeFm.format(ctxStats.numGets));
+      println("         Bytes Sent:  " + wholeFm.format(ctxStats.bytesSent));
+      println("     Bytes Received:  " + wholeFm.format(ctxStats.bytesReceived));
+      println("  Avg Resp Time (s):  " + decFm.format(ctxStats.averageResponseTime / 1000.0));
+      println("Worst Resp Time (s):  " + decFm.format(ctxStats.worstResponseTime / 1000.0));
+      println();
+    }
+  }
+
+
+  def parseStats(file: File): Stats = {
     val source = Source.fromFile(file);
     try {
       // fold or iterator??

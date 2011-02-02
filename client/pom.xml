@@ -22,7 +22,6 @@ under the License.
   <packaging>jar</packaging>
   <name>Client-Side Dispatching</name>
   <dependencies>
-
     <dependency>
       <groupId>org.beeherd.dispatcher</groupId>
       <artifactId>http</artifactId>
@@ -94,8 +93,8 @@ under the License.
           </execution>
         </executions>
       </plugin>
-
-      <!-- The following will run your BDD tests.  Use mvn exec:exec -->
+      
+      <!--
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
@@ -104,14 +103,26 @@ under the License.
           <executable>java</executable>
           <classpathScope>test</classpathScope>
           <arguments>
-            <!--<argument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8001</argument>-->
             <argument>-classpath</argument>
             <classpath />
-            <!-- SpecsRunner runs all the *Spec.class -->
             <argument>org.beeherd.http.client.SimpleTrackedParserSpec</argument>
           </arguments>
         </configuration>
       </plugin>
+      -->
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1</version>
+        <configuration>
+          <mainClass>org.beeherd.http.client.SimpleTrackedParser</mainClass>
+          <arguments>
+            <argument>blah</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+
 
     </plugins>
   </build>
