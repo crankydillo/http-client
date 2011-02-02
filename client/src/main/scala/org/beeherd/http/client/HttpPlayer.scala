@@ -156,17 +156,18 @@ class SimpleTrackedFormatter(sep: String = ", ") extends TrackedFormatter {
   def format(tracked: Tracked): String = {
     val ctx = 
       tracked.context match {
-        case Some(c) => sep + c
+        case Some(c) => c
         case _ => ""
       }
 
     val (code, time, contentLength) = tracked match {
-      case DResponse(_, _, _, _, c, t, l) => (sep + c, sep + t, sep + l)
-      case Timeout(_, _, _, _, t) => ("TIMEOUT", sep + t, "")
+      case DResponse(_, _, _, _, c, t, l) => (c, t, l)
+      case Timeout(_, _, _, _, t) => ("TIMEOUT", t, "")
     }
 
     tracked.requestDate + sep + tracked.method + sep + tracked.url + 
-    sep + ctx + sep + tracked.contentLength  + contentLength + time + code
+    sep + ctx + sep + tracked.contentLength  + sep + contentLength + 
+    sep + time + sep + code
   }
 }
 
