@@ -101,8 +101,14 @@ under the License.
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.1</version>
         <configuration>
-          <mainClass>org.beeherd.http.client.App</mainClass>
+          <executable>java</executable>
+          <classpathScope>test</classpathScope>
           <arguments>
+            <!--<argument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8001</argument>-->
+            <argument>-classpath</argument>
+            <classpath />
+            <!-- SpecsRunner runs all the *Spec.class -->
+            <argument>org.beeherd.http.client.SimpleTrackedParserSpec</argument>
           </arguments>
         </configuration>
       </plugin>
