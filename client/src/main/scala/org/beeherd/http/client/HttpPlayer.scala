@@ -74,9 +74,8 @@ class DelayingHttpPlayer(
             , op.request.method
             , op.context
             , op.request.content match { case Some(c) => c.length; case _ => 0 }
-            , resp.code
+            , resp
             , respTime
-            , resp.content match { case Some(c) => c.length; case _ => 0 }
           );
 
         op.handler match {
@@ -127,9 +126,8 @@ case class DResponse(
     , override val method: RequestMethod.Value
     , override val context: Option[String]
     , override val contentLength: Long = 0
-    , code: Int
+    , response: Response
     , responseTime: Long // in milliseconds
-    , responseContentLength: Long = 0
   ) extends Tracked(url, method, context, contentLength)
 
 /**
@@ -161,7 +159,7 @@ class SimpleTrackedFormatter(sep: String = ", ") extends TrackedFormatter {
       }
 
     val (code, time, contentLength) = tracked match {
-      case DResponse(_, _, _, _, c, t, l) => (c, t, l)
+      case DResponse(_, _, _, _, r, t) => (r.code, t, r.contentLength)
       case Timeout(_, _, _, _, t) => ("TIMEOUT", t, "")
     }
 
@@ -190,11 +188,11 @@ class XmlTrackedFormatter extends TrackedFormatter {
 
     val response = 
       tracked match {
-        case DResponse(_, _, _, _, c, t, l) =>
+        case DResponse(_, _, _, _, r, t) =>
           <response>
-            <code>{c}</code>
+            <code>{r.code}</code>
             <responseTime>{t}</responseTime>
-            <contentLength>{l}</contentLength>
+            <contentLength>{r.contentLength}</contentLength>
           </response>
         case Timeout(_, _, _, _, t) => <timeout>{t}</timeout>
       }

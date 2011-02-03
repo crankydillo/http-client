@@ -55,6 +55,13 @@ class Response(val code: Int
    * Find the <b>first</b> header with a matching name (case-sensitive).
    */
   def header(name: String): Option[String] = header(name, false)
+
+
+  /**
+   * @return the content length.  If there is no content, return 0.
+   */
+   lazy val contentLength = 
+   content match { case Some(c) => c.length; case None => 0}
 }
 
 // Case classes appear to be controversial.  You can probably safely think of
