@@ -23,14 +23,35 @@ import org.specs.mock.Mockito
 import org.mockito.Matchers._
 
 import org.beeherd.dispatcher._
+import org.beeherd.http.dispatcher._
 
 class HttpPlayerSpecTest extends JUnit4(HttpPlayerSpec)
 object HttpPlayerSpec extends Specification with Mockito {
 
-  "An DeletingHttpPlayer" should {
-    "Issue a series of deletes for all CreatedResponses it received during a play" in {
+  "A CreationTrackingPlayer" should {
+    "List all the URLs for all CreatedResponses it received during a play" in {
       val underlying = mock[HttpPlayer]
-      underlying.play(anyObject()) returns Seq()
+
+      def created(url: String) = 
+        DResponse(url, RequestMethod.Post, None, 1, CreatedResponse(url), 1)
+
+      def ok() = 
+        DResponse("http://hi", RequestMethod.Get, None, 1, OkResponse(), 1)
+
+      underlying.play(anyObject()) returns {
+          Seq(
+            created("http://foo")
+            , ok()
+            , created("http://bar")
+          )
+      }
+
+      val player = new CreationTrackingPlayer(underlying);
+      player.play(Seq());
+      val urls = player.createdUrls;
+      urls must haveSize(2);
+      urls(0) must beEqual("http://foo")
+      urls(1) must beEqual("http://bar")
     }
   }
 }

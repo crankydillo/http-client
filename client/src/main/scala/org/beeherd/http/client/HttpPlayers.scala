@@ -144,6 +144,33 @@ class RandomizingPlayer(
     sequentialPlayer.play(scala.util.Random.shuffle(operations));
 }
 
+/**
+* A player that will keep track of and delete created resources.
+*/
+class CreationTrackingPlayer(underlying: HttpPlayer) extends HttpPlayer {
+  private val createdUrlss = new scala.collection.mutable.ArrayBuffer[String]();
+
+  def play(operations: Seq[Operation]): Seq[Tracked] = {
+    val results = underlying.play(operations);
+    results.foreach {tracked =>
+      tracked match {
+        case DResponse(_, _, _, _, r, _) =>
+          r match {
+            case CreatedResponse(l, _) => createdUrlss += l
+            case _ => 
+          }
+        case _ =>
+      }
+    }
+    results
+  }
+
+  def deleteAll(): Seq[Tracked] = Seq()
+
+  def createdUrls = createdUrlss.toSeq
+}
+
+
 // Some formatting tools
 trait TrackedFormatter {
   def format(tracked: Tracked): String
