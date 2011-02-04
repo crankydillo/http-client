@@ -19,11 +19,18 @@ package org.beeherd.http.client
 import org.specs._
 import org.specs.runner.JUnit4
 
-class HttpPlayerSpecTest extends JUnit4(HttpPlayerSpec)
-object HttpPlayerSpec extends Specification {
+import org.specs.mock.Mockito
+import org.mockito.Matchers._
 
-  "An HttpPlayer" should {
-    "do something" in {
+import org.beeherd.dispatcher._
+
+class HttpPlayerSpecTest extends JUnit4(HttpPlayerSpec)
+object HttpPlayerSpec extends Specification with Mockito {
+
+  "An DeletingHttpPlayer" should {
+    "Issue a series of deletes for all CreatedResponses it received during a play" in {
+      val underlying = mock[HttpPlayer]
+      underlying.play(anyObject()) returns Seq()
     }
   }
 }
