@@ -41,19 +41,20 @@ class DelayingHttpPlayer(
     , randomizeDelay: Boolean = false
   ) extends HttpPlayer {
 
-  private def delayFn = 
-    if (randomizeDelay) {
-      val randomizer = new java.util.Random();
-      () => randomizer.nextInt(delay) * 1000
-    } else {
-      () => delay * 1000
-    }
+  private val randomizer = new java.util.Random();
+
+  private def delayFn = {
+    val time =
+      if (randomizeDelay) randomizer.nextInt(delay) * 1000
+      else delay * 1000
+    Thread.sleep(time)
+  }
 
   def play(operations: Seq[Operation]): Seq[Tracked] = {
 
     def now = System.currentTimeMillis
 
-    def fn(op: Operation) = {
+    def fn(op: Operation): Seq[Tracked] = {
       val start = now
 
       def timeout = 
@@ -90,8 +91,7 @@ class DelayingHttpPlayer(
     }
 
     // We don't want to sleep on the first
-    operations.take(1).flatMap { fn _ } ++
-    operations.drop(1).flatMap { Thread.sleep(delayFn()); fn _ }
+    fn(operations.head) ++ operations.drop(1).flatMap { delayFn; fn _ }
   }
 }
 
