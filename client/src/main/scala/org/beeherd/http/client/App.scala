@@ -16,7 +16,7 @@
 */
 package org.beeherd.http.client
 
-import java.io.{BufferedWriter, OutputStreamWriter}
+import java.io.{BufferedWriter, File, FileWriter, OutputStreamWriter}
 
 import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
 import org.apache.http.client.{ResponseHandler, HttpClient => ApacheHttpClient, HttpResponseException}
@@ -50,7 +50,9 @@ object App {
       val player = new RandomizingPlayer(new DelayingHttpPlayer(dispatcher, 3, true));
       try {
         val out = new BufferedWriter(new OutputStreamWriter(Console.out));
-        val exerciser = new ExercisingClient(player, 15, Ops, out);
+        val err = new BufferedWriter(new FileWriter(new File("errs")))
+        val exerciser = new ExercisingClient(player, 15, Ops,
+          Some(OutputDefinition(out, err)))
         val thread = new Thread(exerciser, "Exerciser");
         thread.start();
         thread.join();
@@ -75,5 +77,6 @@ object App {
   def Ops = Seq(
       new Operation(new HttpRequest("www.cnn.com"))
       , new Operation(new HttpRequest("www.slashdot.com"))
+      , new Operation(new HttpRequest("www.booyea~oejif.com"))
     )
 }

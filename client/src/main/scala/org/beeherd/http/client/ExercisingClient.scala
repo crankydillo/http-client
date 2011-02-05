@@ -16,7 +16,7 @@
 */
 package org.beeherd.http.client
 
-import java.io.Writer
+import java.io.{BufferedWriter, OutputStreamWriter, Writer}
 import java.util.{Timer, TimerTask}
 
 import org.beeherd.dispatcher._
@@ -31,8 +31,7 @@ class ExercisingClient(
   player: HttpPlayer
   , secsToRun: Long
   , operations: Seq[Operation]
-  , out: Writer
-  , formatter: TrackedFormatter = new SimpleTrackedFormatter
+  , out: Option[OutputDefinition] = None
 ) extends Runnable {
 
   def run(): Unit = {
@@ -46,9 +45,38 @@ class ExercisingClient(
       )
 
     while (!end) {
-      val resp = player.play(operations);
-      resp.foreach {r => out.write(formatter.format(r) + "\n")}
-      out.flush();
+      val responses = player.play(operations);
+
+      out match {
+        case Some(OutputDefinition(std, err, formatter)) => {
+          responses.foreach {resp =>
+            std.write(formatter.format(resp) + "\n");
+            resp match {
+              case DResponse(url, meth, _, _, rsp, time) =>
+                if (rsp.code > 399) {
+                  err.write("-" * 80 + "\n");
+                  err.write(meth + " " + url + " - " + rsp.code + " (" +
+                      (time / 1000.0) + " s)\n");
+                  err.write(resp.requestDate + "\n");
+                  err.write(rsp.content + "\n");
+                }
+              case _ =>
+            }
+          }
+          std.flush();
+          err.flush();
+        }
+        case _ =>
+      }
     }
   }
 }
+
+/**
+* Define some output stuff
+*/
+sealed case class OutputDefinition(
+    val std: Writer
+    , val err: Writer
+    , val formatter: TrackedFormatter = new SimpleTrackedFormatter
+  )

@@ -122,10 +122,7 @@ under the License.
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.1</version>
         <configuration>
-          <mainClass>org.beeherd.http.client.SimpleTrackedParser</mainClass>
-          <arguments>
-            <argument>blah</argument>
-          </arguments>
+          <mainClass>org.beeherd.http.client.App</mainClass>
         </configuration>
       </plugin>
 
