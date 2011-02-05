@@ -16,7 +16,7 @@
 */
 package org.beeherd.http.client
 
-import java.io.{BufferedWriter, OutputStreamWriter}
+import java.io.{BufferedWriter, File, FileWriter, OutputStreamWriter}
 
 import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
 import org.apache.http.client.{ResponseHandler, HttpClient => ApacheHttpClient, HttpResponseException}
@@ -47,15 +47,18 @@ object App {
       val client = new DefaultHttpClient(cm, params);
       val dispatcher = new HttpDispatcher(client);
 
-      val player = new RandomizingPlayer(new DelayingHttpPlayer(dispatcher, 3, true));
+      val player = new DelayingHttpPlayer(dispatcher, 10)
       try {
         val out = new BufferedWriter(new OutputStreamWriter(Console.out));
-        val exerciser = new ExercisingClient(player, 15, Ops, out);
+        //val out = new BufferedWriter(new FileWriter(new File("std")))
+        val err = new BufferedWriter(new FileWriter(new File("err")))
+        val exerciser = new ExercisingClient(player, 15, Ops,
+          Some(OutputDefinition(out, err)))
         val thread = new Thread(exerciser, "Exerciser");
         thread.start();
         thread.join();
         /*
-        val lst = player.play(Ops);
+       val lst = player.play(Ops);
         lst.foreach {resp =>
           resp match {
             case Timeout() => println("The request timed out.");
@@ -75,5 +78,6 @@ object App {
   def Ops = Seq(
       new Operation(new HttpRequest("www.cnn.com"))
       , new Operation(new HttpRequest("www.slashdot.com"))
+      , new Operation(new HttpRequest("www.booyea~oejif.com"))
     )
 }
