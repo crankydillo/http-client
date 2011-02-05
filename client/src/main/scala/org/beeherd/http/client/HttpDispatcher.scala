@@ -17,13 +17,52 @@ import org.beeherd.dispatcher._
 import org.beeherd.http.dispatcher._
 
 object HttpDispatcher {
+  val DefaultTimeout = 15000
+
   /**
-  * Sets up all state for dispatching the request and handles all the tear down
+  * Sets up all state for dispatching the request and handles all the tear down.
+  * <p>
+  * This is not threadsafe!
   *
   * @param req
   * @return Response
   */
-  def dispatch(req: HttpRequest, timeout: Int): Response = {
+  def dispatch(req: HttpRequest, timeout: Int = DefaultTimeout): Response = {
+    val client = createClient(timeout)
+    val dispatcher = new HttpDispatcher(client);
+    try {
+      dispatcher.dispatch(req);
+    } finally {
+      client.getConnectionManager.shutdown();
+    }
+  }
+
+  /**
+  * Sets up all state for issuing a get and handles all the tear down.
+  * <p>
+  * This is not threadsafe!
+  *
+  * @param url
+  * @param params
+  * @param headers
+  * @return Response
+  */
+  def get(
+    url: String
+    , params: Map[String, String] = Map()
+    , headers: Map[String, List[String]] = Map()
+    , timeout: Int = DefaultTimeout
+  ): Response = {
+    val client = createClient(timeout)
+    val dispatcher = new HttpDispatcher(client);
+    try {
+      dispatcher.get(url, params, headers)
+    } finally {
+      client.getConnectionManager.shutdown();
+    }
+  }
+
+  private def createClient(timeout: Int) = {
     val params = new BasicHttpParams();
     HttpConnectionParams.setSoTimeout(params, timeout);
     val schemeRegistry = new SchemeRegistry();
@@ -31,13 +70,7 @@ object HttpDispatcher {
         new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
 
     val cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-    val client = new DefaultHttpClient(cm, params);
-    val dispatcher = new HttpDispatcher(client);
-    try {
-      dispatcher.dispatch(req);
-    } finally {
-      client.getConnectionManager.shutdown();
-    }
+    new DefaultHttpClient(cm, params);
   }
 
 }
@@ -52,9 +85,9 @@ class HttpDispatcher(
   def dispatch(req: HttpRequest): Response = {
     try {
       req match {
-          case HttpRequest(_, RequestMethod.Get) => get(req);
-          case HttpRequest(_, RequestMethod.Post) => post(req);
-          case HttpRequest(_, RequestMethod.Delete) => delete(req);
+          case HttpRequest(_, RequestMethod.Get) => get_h(req);
+          case HttpRequest(_, RequestMethod.Post) => post_h(req);
+          case HttpRequest(_, RequestMethod.Delete) => delete_h(req);
         }
     } catch {
       case e:HttpResponseException => {
@@ -71,7 +104,26 @@ class HttpDispatcher(
     }
   }
 
-  private def get(req: HttpRequest): Response = {
+  def get(
+    url: String
+    , params: Map[String, String] = Map()
+    , headers: Map[String, List[String]] = Map()
+  ): Response = {
+    val (protocol, host, port, path) = HttpRequest.parseUrl(url);
+    val req = 
+      new HttpRequest(
+        host
+        , path
+        , RequestMethod.Get
+        , headers
+        , params = params
+        , protocol = protocol
+        , port = port
+      )
+    dispatch(req)
+  }
+
+  private def get_h(req: HttpRequest): Response = {
     val meth = new HttpGet(req.url)
 
     try {
@@ -88,11 +140,16 @@ class HttpDispatcher(
     }
   }
 
-  private def post(req: HttpRequest): Response = {
+  private def post_h(req: HttpRequest): Response = {
     val meth = new HttpPost(req.url)
     try {
       val params = meth.getParams;
-      req.params.foreach {e => params.setParameter(e._1, e._2)}
+      req.params.foreach {case (n, v) => params.setParameter(n, v)}
+
+      req.headers.foreach {case (name, values) =>
+        values.foreach {v => meth.addHeader(name, v)}
+      }
+
       val entity = 
         if (req.content != None) {
         req.content.get match {
@@ -124,7 +181,7 @@ class HttpDispatcher(
     }
   }
 
-  private def put(req: HttpRequest): Response = {
+  private def put_h(req: HttpRequest): Response = {
     val meth = new HttpPut(req.url)
     try {
       val params = meth.getParams;
@@ -160,7 +217,7 @@ class HttpDispatcher(
     }
   }
 
-  private def delete(req: HttpRequest): Response = {
+  private def delete_h(req: HttpRequest): Response = {
     val meth = new HttpDelete(req.url);
     try {
       val handler = new BasicResponseHandler();
@@ -255,6 +312,6 @@ class HttpDispatcher(
       try {in.close()} catch {case e:Exception => {}}
       try {out.close()} catch {case e:Exception => {}}
     }
-
   }
+
 }

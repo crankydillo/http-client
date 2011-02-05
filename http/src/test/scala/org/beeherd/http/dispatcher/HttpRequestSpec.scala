@@ -33,4 +33,12 @@ object HttpRequestSpec extends Specification {
       }
     }
   }
+
+  "The HttpRequest object" should {
+    import HttpRequest._
+    "parse URLs into (protocol, host, port, path)" in {
+      parseUrl("http://beeherd.org/foo/bar") must beEqual(
+        ("http", "beeherd.org", 80, "/foo/bar"))
+    }
+  }
 }

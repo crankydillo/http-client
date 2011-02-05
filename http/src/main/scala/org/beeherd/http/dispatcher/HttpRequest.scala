@@ -17,6 +17,8 @@ class HttpRequest(
 
 object HttpRequest {
 
+  lazy val UrlRegex = """([A-Za-z]+)://(\w+(\.\w+)*)(:(\d+))?(.*)""".r
+
   def unapply(request: HttpRequest): Option[(List[String], RequestMethod.Value)] = {
     if (request == null)
       return None
@@ -31,6 +33,21 @@ object HttpRequest {
     }
     val tmp = if (path.startsWith("/")) path.drop(1) else path
     Some((tmp.split("/").toList, method))
+  }
+
+  /**
+  * Parse a url into (protocol, host, port, path)
+  *
+  * @param url
+  */
+  def parseUrl(url: String): (String, String, Int, String) = {
+    val UrlRegex(protocol, host, _, _, port, path) = url
+    (
+      protocol
+      , host
+      , if (port == null) 80 else port.toInt
+      , if (path == null) "" else path
+    )
   }
 }
 
