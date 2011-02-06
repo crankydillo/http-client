@@ -28,8 +28,9 @@ case class StringContent(val str: String, contenttype: String) extends Content(c
   override def toString = str;
 }
 
-case class XHtmlContent(val xml: scala.xml.Node) extends Content("text/html", xml.toString.getBytes("UTF-8").length
-    ) {
+case class XHtmlContent(val xml: scala.xml.Node) 
+extends Content("text/html", xml.toString.getBytes("UTF-8").length) {
+
   override def createStream = {
     val bytes = xml.toString.getBytes("UTF-8");
     new ByteArrayInputStream(bytes);
@@ -51,8 +52,17 @@ case class HtmlContent(val str: String) extends Content("text/html", str.getByte
 // TODO: Use this on the Response side.
 case class XmlContent(
   xml: scala.xml.Node
-) extends Content("text/xml", xml.toString.getBytes("UTF-8").length
-    ) {
+) extends Content("text/xml", xml.toString.getBytes("UTF-8").length) {
+
+  def this(str: String) =
+    this(
+      try {
+        scala.xml.XML.loadString(str)
+      } catch {
+        case e:Exception => throw new IllegalArgumentException(e)
+      }
+    )
+
   override def createStream = {
     val bytes = xml.toString.getBytes("UTF-8");
     new ByteArrayInputStream(bytes);
