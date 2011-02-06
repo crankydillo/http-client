@@ -41,4 +41,28 @@ object HttpRequestSpec extends Specification {
         ("http", "beeherd.org", 80, "/foo/bar"))
     }
   }
+
+  "The RequestMethod object" should {
+    import RequestMethod._
+    "create a RequestMethods" in {
+      "a Get from \"get\"" in {
+        create("get") must beEqual(Get)
+      }
+      "a Post from \"post\"" in {
+        create("post") must beEqual(Post)
+      }
+      "a Put from \"put\"" in {
+        create("put") must beEqual(Put)
+      }
+      "a Delete from \"delete\"" in {
+        create("delete") must beEqual(Delete)
+      }
+      "a Delete from \"del\"" in {
+        create("del") must beEqual(Delete)
+      }
+      "throw an IllegalArgumentException when one of the above is not given" in {
+        create("ohnos") must throwA[IllegalArgumentException]
+      }
+    }
+  }
 }

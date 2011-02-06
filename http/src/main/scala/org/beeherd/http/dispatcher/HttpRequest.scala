@@ -57,14 +57,13 @@ object RequestMethod extends Enumeration {
   def create(str: String): RequestMethod.Value = {
     if (str == null || str.trim.length == 0)
       throw new IllegalArgumentException("The request method must not be null or the empty string.");
-    if (str.equalsIgnoreCase("get"))
-      return RequestMethod.Get;
-    if (str.equalsIgnoreCase("post"))
-      return RequestMethod.Post;
-    if (str.equalsIgnoreCase("put"))
-      return RequestMethod.Put;
-    if (str.equalsIgnoreCase("delete"))
-      return RequestMethod.Delete;
-    throw new IllegalArgumentException(str + " is not supported.")
+    str.toLowerCase match {
+      case "get" => Get
+      case "post" => Post
+      case "put" => Put
+      case "delete" => Delete
+      case "del" => Delete
+      case _ => throw new IllegalArgumentException(str + " is not supported.")
+    }
   }
 }
