@@ -50,6 +50,11 @@ class DelayingHttpPlayer(
     Thread.sleep(time)
   }
 
+  /**
+  * <i>Play</i> the operations sequentially.
+  *
+  * @param operations
+  */
   def play(operations: Seq[Operation]): Seq[Tracked] = {
 
     def now = System.currentTimeMillis
@@ -95,6 +100,10 @@ class DelayingHttpPlayer(
   }
 }
 
+/**
+* An Operation represents a chain of HTTP requests where all but the first HTTP
+* request is the result of applying some function to previous responses.
+*/
 class Operation(
     val request: HttpRequest
     , val handler: Option[(Response => Seq[Operation])] = None
@@ -150,6 +159,12 @@ class RandomizingPlayer(
 class CreationTrackingPlayer(underlying: HttpPlayer) extends HttpPlayer {
   private val createdUrlss = new scala.collection.mutable.ArrayBuffer[String]();
 
+  /**
+  * <i>Play</i> a series of HTTP requests.  The URLs of created resources, which
+  * are returned in the Location header of 201 responses are tracked.
+  * 
+  * @param operations
+  */
   def play(operations: Seq[Operation]): Seq[Tracked] = {
     val results = underlying.play(operations);
     results.foreach {tracked =>
@@ -165,71 +180,23 @@ class CreationTrackingPlayer(underlying: HttpPlayer) extends HttpPlayer {
     results
   }
 
-  def deleteAll(): Seq[Tracked] = Seq()
+  /**
+  * Issue deletes for everything that has been created by this player.
+  */
+  def deleteAll(): Seq[Tracked] = 
+    play(createdUrlss.map {u => 
+      val (protocol, host, port, path) = HttpRequest.parseUrl(u);
+      new Operation(new HttpRequest(host, path, 
+          RequestMethod.Delete, protocol = protocol, port = port))
+    }
+  )
 
+  /**
+  * Return an immutable copy of the resource URLs that have been created by this
+  * player.
+  */
   def createdUrls = createdUrlss.toSeq
 }
 
 
-// Some formatting tools
-trait TrackedFormatter {
-  def format(tracked: Tracked): String
-}
 
-class SimpleTrackedFormatter(sep: String = ", ") extends TrackedFormatter {
-
-  def format(tracked: Tracked): String = {
-    val ctx = 
-      tracked.context match {
-        case Some(c) => c
-        case _ => ""
-      }
-
-    val (code, time, contentLength) = tracked match {
-      case DResponse(_, _, _, _, r, t) => (r.code, t, r.contentLength)
-      case Timeout(_, _, _, _, t) => ("TIMEOUT", t, "")
-    }
-
-    tracked.requestDate + sep + tracked.method + sep + tracked.url + 
-    sep + ctx + sep + tracked.contentLength  + sep + contentLength + 
-    sep + time + sep + code
-  }
-}
-
-class XmlTrackedFormatter extends TrackedFormatter {
-  private val prettyPrinter = new scala.xml.PrettyPrinter(500, 2)
-  def format(tracked: Tracked): String = {
-
-    val request = 
-      <request>
-        <url>{tracked.url}</url>
-        <method>{tracked.method}</method>
-        <contentLength>{tracked.contentLength}</contentLength>
-        {
-          tracked.context match {
-            case Some(ctx) => <context>{ctx}</context>
-            case None => {}
-          }
-        }
-      </request>
-
-    val response = 
-      tracked match {
-        case DResponse(_, _, _, _, r, t) =>
-          <response>
-            <code>{r.code}</code>
-            <responseTime>{t}</responseTime>
-            <contentLength>{r.contentLength}</contentLength>
-          </response>
-        case Timeout(_, _, _, _, t) => <timeout>{t}</timeout>
-      }
-
-    prettyPrinter.format(
-        <operation>
-        <time>{tracked.requestDate}</time>
-        {request}
-        {response}
-      </operation>
-    )
-  }
-}
