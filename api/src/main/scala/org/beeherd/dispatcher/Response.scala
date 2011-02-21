@@ -40,7 +40,7 @@ class Response(val code: Int
   /**
    * Find the <b>first</b> header with a matching name.
    */
-  def header(name: String, ignoreCase: Boolean): Option[String] = {
+  def header(name: String, ignoreCase: Boolean = false): Option[String] = {
     val sameName = 
       if (ignoreCase)
         name.equalsIgnoreCase(_)
@@ -50,12 +50,6 @@ class Response(val code: Int
     headers.find { p => sameName(p._1) }.map(_._2)
 
   }
-
-  /**
-   * Find the <b>first</b> header with a matching name (case-sensitive).
-   */
-  def header(name: String): Option[String] = header(name, false)
-
 
   /**
    * @return the content length.  If there is no content, return 0.
