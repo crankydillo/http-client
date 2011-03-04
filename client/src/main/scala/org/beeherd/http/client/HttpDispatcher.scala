@@ -17,7 +17,8 @@ import org.beeherd.dispatcher._
 import org.beeherd.http.dispatcher._
 
 /**
-* A convenience for issues HTTP requests.  It creates an HttpDispatcher for each request.
+* A convenience for issues HTTP requests.  It creates an HttpDispatcher for
+* each request.
 *
 * @author scox
 */
