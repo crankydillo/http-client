@@ -16,6 +16,11 @@ import org.apache.http.params.{BasicHttpParams, HttpConnectionParams}
 import org.beeherd.dispatcher._
 import org.beeherd.http.dispatcher._
 
+/**
+* A convenience for issues HTTP requests.  It creates an HttpDispatcher for each request.
+*
+* @author scox
+*/
 object HttpDispatcher {
   val DefaultTimeout = 15000
 
@@ -75,6 +80,21 @@ object HttpDispatcher {
 
 }
 
+/**
+* An Apache HttpClient wrapper.
+* <p>
+* <pre>
+* {@code
+* val dispatcher = new HttpDispatcher(apacheClient)
+* val xmlNodeData = 
+*    dispatcher.get("http://your.rest.service/xmlResource") match {
+*      case XmlResponse(xml) => (xml \ "data").text;
+*      case _ => throw RuntimeException("Expected XML data");
+*    }
+* }
+* <pre>
+* @author scox
+*/
 class HttpDispatcher(
     client: ApacheHttpClient
     , showProgress: Boolean = false
@@ -129,6 +149,11 @@ class HttpDispatcher(
     try {
       val params = meth.getParams;
       req.params.foreach {e => params.setParameter(e._1, e._2)}
+
+      req.headers.foreach {case (name, values) =>
+        values.foreach {v => meth.addHeader(name, v)}
+      }
+
       val response = client.execute(meth);
       converter.convert(response);
 
