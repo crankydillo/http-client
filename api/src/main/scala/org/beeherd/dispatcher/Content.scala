@@ -80,9 +80,9 @@ case class ZipContent(val bytes: Array[Byte]) extends Content("application/zip",
 }
 
 case class StreamedContent(
-    val stream: InputStream, 
-    override val ctype: String, 
-    override val length: Long)
+    val stream: InputStream
+    , override val ctype: String
+    , override val length: Long)
 extends Content(ctype, length) {
   override def createStream = stream;
 }
@@ -90,7 +90,11 @@ extends Content(ctype, length) {
 /**
  * Represent multipart/form-data content.
  */
-case class Part(val name: String, val headers: List[(String, String)], val content: Content)
+case class Part(
+  val name: String 
+  , val content: Content
+  , val headers: List[(String, String)] = List()
+)
 
 case class MultiPartContent(parts: List[Part]) 
 extends Content("multipart/form-data", parts.foldLeft (0L) {case (sum, Part(_,_,c)) => sum + c.length}) {
