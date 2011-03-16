@@ -89,69 +89,17 @@ extends Content(ctype, length) {
 
 /**
  * Represent multipart/form-data content.
- * <p>
- * It has not been tested, but this will probably only work for sending one file.
- * <p>
- * This is a little different than the other cases.  Currently, it is only used
- * on the Request side of things.
  */
-case class MultiPartContent(stream: InputStream, boundary: Array[Byte]) extends Content("multipart/form-data", -1) {
+case class Part(val name: String, val headers: List[(String, String)], val content: Content)
+
+case class MultiPartContent(parts: List[Part]) 
+extends Content("multipart/form-data", parts.foldLeft (0L) {case (sum, Part(_,_,c)) => sum + c.length}) {
 
   // Consider replacing dependency on Apache Commons FileUpload with Apache Mime4j.
 
-  // Don't know about using -1 as length...  I just know I don't want to read the stream to calculate length
-
   override def createStream = throw new UnsupportedOperationException("Cannot get a stream for multipart/form-data is not supported yet.");
 
-  /**
-   * The parts of the stream.
-   * @return a list of headers (name, value) and byte array pairs representing
-   * the parts.
-   */
-  lazy val parts: List[Part] = {
-    // Should this stuff be split out?  The other cases don't take streams and convert...
-
-    def parseHeaders(str: String): List[(String, String)] = {
-      str.split("\n")
-      .filter {s => s.indexOf(": ") != -1}
-      .map {s => {
-            val a = s.split(": ");
-            assert(a.size == 2);
-            (a(0).trim, a(1).trim)
-          }
-        }.toList
-    }
-
-    def isBinary(headers: List[(String, String)]): Boolean = headers.exists {
-          h => h._1.equalsIgnoreCase("content-type") && h._2.toLowerCase.startsWith("application/octet-stream")
-        }
-
-    val multipartStream =  new MultipartStream(stream, boundary);
-    var nextPart = multipartStream.skipPreamble;
-    val parts = new scala.collection.mutable.ArrayBuffer[Part]();
-
-    while(nextPart) {
-      val headerStr = multipartStream.readHeaders;
-      val headers = parseHeaders(headerStr);
-
-      val data = new ByteArrayOutputStream();
-      multipartStream.readBodyData(data);
-
-      // TODO: Handle encoding
-      val content = 
-        if (isBinary(headers))
-          ByteArrayContent(data.toByteArray);
-        else
-          StringContent(new String(data.toByteArray), "text/plain");
-
-        // not sure where to get name on the read side
-      val aPart = new Part(headers, content);
-      parts + aPart
-      nextPart = multipartStream.readBoundary();
-    }
-    parts.toList;
-  }
-
+  /*
   def part(headerName: String, headerValue: String): List[Part] = {
     parts.filter {
       p => p.headers.exists {
@@ -160,14 +108,12 @@ case class MultiPartContent(stream: InputStream, boundary: Array[Byte]) extends 
     }
   }
 
-  /**
    * Look for a part by name.  This assumes that the name of a part is
    * delivered as the substring ' name="partname"' of the Content-Disposition
    * header.
    * 
    * @param name - The name of the desired part.
    * @return a list of the parts whose name matches argument
-   */
   def part(name: String): List[Part] = {
     parts.filter {
       p => p.headers.exists {
@@ -175,8 +121,7 @@ case class MultiPartContent(stream: InputStream, boundary: Array[Byte]) extends 
       }
     }
   }
-
-  class Part(val headers: List[(String, String)], val content: Content)
+   */
 }
 
 
@@ -289,6 +234,8 @@ class ContentCreator {
   }   
 
   private def createMultiPartContent(in: InputStream, contentType: String): Option[MultiPartContent] = { 
+    throw new UnsupportedOperationException("MultipartContent not supported yet.");
+    /*
     val stream = {
       if (ContentCreator.log.isDebugEnabled) {
         val bytes = IOUtils.toByteArray(in);
@@ -308,5 +255,6 @@ class ContentCreator {
     val boundaryString = contentType.substring(boundaryIndex + 9);
     val boundary = boundaryString.getBytes;
     Some(MultiPartContent(stream, boundary));
+    */
   }   
 }

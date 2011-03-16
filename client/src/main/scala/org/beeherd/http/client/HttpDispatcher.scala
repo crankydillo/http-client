@@ -5,10 +5,14 @@ import java.text.DecimalFormat
 import java.util.concurrent.TimeUnit
 
 import org.apache.commons.io.IOUtils
+
+import org.apache.http.HttpEntity
 import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
 import org.apache.http.client.{ResponseHandler, HttpClient => ApacheHttpClient, HttpResponseException}
 import org.apache.http.client.methods.{HttpGet, HttpPost, HttpPut, HttpDelete}
-import org.apache.http.entity.StringEntity
+import org.apache.http.entity._
+import org.apache.http.entity.mime._
+import org.apache.http.entity.mime.content._
 import org.apache.http.impl.client.{BasicResponseHandler, DefaultHttpClient}
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
 import org.apache.http.params.{BasicHttpParams, HttpConnectionParams}
@@ -101,6 +105,8 @@ class HttpDispatcher(
     , showProgress: Boolean = false
   ) {
 
+  type Headers = Map[String, String]
+
   private val converter = new HttpConverter(showProgress); // compose!
 
   def dispatch(req: HttpRequest): Response = {
@@ -176,19 +182,8 @@ class HttpDispatcher(
         values.foreach {v => meth.addHeader(name, v)}
       }
 
-      val entity = 
-        if (req.content != None) {
-        req.content.get match {
-          case StringContent(str, ctype) => new StringEntity(str, ctype);
-          case XmlContent(xml) => {
-            meth.addHeader("Content-Type", "text/xml");
-            new StringEntity(xml.toString, "UTF-8");
-          }
-          case _ => new StringEntity("");
-        }
-      } else {
-        new StringEntity("");
-      }
+      val (headers, entity) = createEntity(req);
+      headers.foreach {case (n, v) => meth.addHeader(n, v)}
       meth.setEntity(entity);
       val handler = new BasicResponseHandler();
       val response = client.execute(meth);
@@ -212,19 +207,8 @@ class HttpDispatcher(
     try {
       val params = meth.getParams;
       req.params.foreach {e => params.setParameter(e._1, e._2)}
-      val entity = 
-        if (req.content != None) {
-        req.content.get match {
-          case StringContent(str, ctype) => new StringEntity(str, ctype);
-          case XmlContent(xml) => {
-            meth.addHeader("Content-Type", "text/xml");
-            new StringEntity(xml.toString, "UTF-8");
-          }
-          case _ => new StringEntity("");
-        }
-      } else {
-        new StringEntity("");
-      }
+      val (headers, entity) = createEntity(req);
+      headers.foreach {case (n, v) => meth.addHeader(n, v)}
       meth.setEntity(entity);
       val handler = new BasicResponseHandler();
       val response = client.execute(meth);
@@ -337,6 +321,31 @@ class HttpDispatcher(
     } finally {
       try {in.close()} catch {case e:Exception => {}}
       try {out.close()} catch {case e:Exception => {}}
+    }
+  }
+
+  private def createEntity(request: Request): (Headers, HttpEntity) = {
+
+    def toEntity(content: Content): (Headers, HttpEntity) = {
+      content match {
+        case StringContent(str, ctype) => (Map(), new StringEntity(str, ctype))
+        case XmlContent(xml) =>
+          (Map("Content-Type" -> "text/xml"), new StringEntity(xml.toString, "UTF-8"));
+        case MultiPartContent(parts) => 
+          val entity = new MultipartEntity();
+          parts.foreach {p => 
+            entity.addPart(p.name,  new InputStreamBody(p.content.createStream, 
+                p.content.ctype, p.name)
+            )
+          }
+          (Map(), entity)
+        case _ => (Map(), new StringEntity(""))
+      }
+    }
+
+    request.content match {
+      case Some(content) => toEntity(content);
+      case _ => (Map(), new StringEntity(""))
     }
   }
 
