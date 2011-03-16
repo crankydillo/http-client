@@ -332,7 +332,7 @@ class HttpDispatcher(
         case XmlContent(xml) =>
           (Map("Content-Type" -> "text/xml"), new StringEntity(xml.toString, "UTF-8"));
         case MultiPartContent(parts) => 
-          val entity = new MultipartEntity();
+          val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
           parts.foreach {p => 
             entity.addPart(p.name,  new InputStreamBody(p.content.createStream, 
                 p.content.ctype, p.name)
