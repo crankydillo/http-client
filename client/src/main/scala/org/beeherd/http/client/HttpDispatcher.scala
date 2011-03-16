@@ -334,8 +334,15 @@ class HttpDispatcher(
         case MultiPartContent(parts) => 
           val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
           parts.foreach {p => 
-            entity.addPart(p.name,  new InputStreamBody(p.content.createStream, 
-                p.content.ctype, p.name)
+            val name = p.name;
+            entity.addPart(
+              name
+              , p.content match {
+                case StringContent(str, enc) => new StringBody(str)
+                case XmlContent(xml) => new StringBody(xml.toString)
+                case _ => new InputStreamBody(p.content.createStream, 
+                  p.content.ctype)
+              }
             )
           }
           (Map(), entity)
