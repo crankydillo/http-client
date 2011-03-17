@@ -340,6 +340,7 @@ class HttpDispatcher(
               , p.content match {
                 case StringContent(str, enc) => new StringBody(str)
                 case XmlContent(xml) => new StringBody(xml.toString)
+                case ByteArrayContent(bytes) => new ByteArrayBody(bytes, name)
                 case _ => new InputStreamBody(p.content.createStream, 
                   p.content.ctype)
               }
