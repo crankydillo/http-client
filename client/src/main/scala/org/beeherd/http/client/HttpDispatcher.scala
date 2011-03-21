@@ -341,8 +341,10 @@ class HttpDispatcher(
                 case StringContent(str, enc) => new StringBody(str)
                 case XmlContent(xml) => new StringBody(xml.toString)
                 case ByteArrayContent(bytes) => new ByteArrayBody(bytes, name)
-                case _ => new InputStreamBody(p.content.createStream, 
-                  p.content.ctype)
+                case _ => new KnownLengthInputStreamBody(
+                  new InputStreamBody(p.content.createStream, p.content.ctype)
+                  , p.content.length
+                )
               }
             )
           }
@@ -357,4 +359,18 @@ class HttpDispatcher(
     }
   }
 
+  private[this] class KnownLengthInputStreamBody(delegate: InputStreamBody, length: Long) 
+  extends ContentBody with ContentDescriptor {
+    def getContentLength = length
+
+    def getCharset = delegate.getCharset
+    def getFilename = delegate.getFilename
+    def getInputStream = delegate.getInputStream
+    def getTransferEncoding = delegate.getTransferEncoding
+    def writeTo(out: OutputStream) = delegate.writeTo(out)
+    def writeTo(out: OutputStream, mode: Int) = delegate.writeTo(out, mode)
+    def getMediaType = delegate.getMediaType
+    def getMimeType = delegate.getMimeType
+    def getSubType = delegate.getSubType
+  }
 }
