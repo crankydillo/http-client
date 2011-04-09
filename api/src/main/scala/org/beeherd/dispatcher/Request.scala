@@ -10,22 +10,21 @@ package org.beeherd.dispatcher
 import java.io.StringReader;
 import java.util.{Map => JMap, List => JList}
 
-import scala.collection.JavaConversions.asMap
 
 object JCollections {
-   import scala.collection.JavaConversions.asBuffer
+   import scala.collection.JavaConversions._
 
    def toList[T](jList: JList[T]):List[T] =
      toListOption(jList).getOrElse(List())
 
    def toListOption[T](jList: JList[T]):Option[List[T]] =
-     Option(jList).map { asBuffer(_).toList }
+     Option(jList).map { asScalaBuffer(_).toList }
 
    def toMap[K,V](jMap:JMap[K,V]):Map[K,V] =
      toMapOption(jMap).getOrElse(Map())
 
    def toMapOption[K,V](jMap:JMap[K,V]):Option[Map[K,V]] =
-     Option(jMap) map { asMap(_).toMap }
+     Option(jMap) map { asScalaMap(_).toMap }
 }
 
 trait Request {
