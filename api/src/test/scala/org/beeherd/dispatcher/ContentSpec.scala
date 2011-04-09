@@ -16,23 +16,51 @@
 */
 package org.beeherd.dispatcher
 
+import java.nio.charset.Charset
+
 import org.specs._
 import org.specs.runner.JUnit4
 
 class ContentSpecTest extends JUnit4(ContentSpec)
 object ContentSpec extends Specification {
 
-  "XmlContent" should {
-    "should be constructable from a string" in {
-      "when the string can be parsed as XML" in {
-        new XmlContent("<a>bar</a>") match {
-          case XmlContent(xml) => xml.text must beEqual("bar")
-          case _ => fail("XmlContent was expected")
+  "Content" should {
+
+    "XmlContent" in {
+      "be constructable from a string" in {
+
+        "when the string can be parsed as XML" in {
+          XmlContent("<a>bar</a>") match {
+            case XmlContent(xml) => xml.text must beEqual("bar")
+            case _ => fail("XmlContent was expected")
+          }
+        }
+
+        "throw an IllegalArgumentException when it cannot be parsed as XML" in {
+          XmlContent("invald") must throwA[IllegalArgumentException]
+        }
+      }
+    }
+
+    "StringContent" in {
+      "default content type to text plain" in {
+        StringContent("foo") match {
+          case StringContent(_, ctype, _) => ctype must beEqual("text/plain")
+          case _ => fail("Expected StringContent")
         }
       }
 
-      "throw an IllegalArgumentException when it cannot be parsed as XML" in {
-        new XmlContent("invald") must throwA[IllegalArgumentException]
+      "be constructable using a string for charset" in {
+        StringContent("foo", "text/plain", "utf-8") match {
+          case StringContent(_, _, cset) => 
+            cset.name must beEqual(Charset.forName("utf-8").name)
+          case _ => fail("Expected StringContent")
+        }
+      }
+
+      "throw an IllegalArgumentException if the charset string is not valid" in {
+        StringContent("foo", "text/plain", "blah") must 
+        throwA[IllegalArgumentException]
       }
     }
   }
