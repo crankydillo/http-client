@@ -1,0 +1,4 @@
+A request/response black box API.  The primary desire was an easy-to-use,
+synchronous HTTP client for my Java/Scala apps.  Since the main benefit on the
+response side revolves around a bunch of case classes, I have not figured out
+what would be good for Java.  Of course, you could use instanceof...
