@@ -18,13 +18,13 @@ object JCollections {
      toListOption(jList).getOrElse(List())
 
    def toListOption[T](jList: JList[T]):Option[List[T]] =
-     Option(jList).map { asScalaBuffer(_).toList }
+     Option(jList).map { asBuffer(_).toList }
 
    def toMap[K,V](jMap:JMap[K,V]):Map[K,V] =
      toMapOption(jMap).getOrElse(Map())
 
    def toMapOption[K,V](jMap:JMap[K,V]):Option[Map[K,V]] =
-     Option(jMap) map { asScalaMap(_).toMap }
+     Option(jMap) map { asMap(_).toMap }
 }
 
 trait Request {
