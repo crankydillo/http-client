@@ -9,6 +9,7 @@ package org.beeherd.dispatcher
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, BufferedReader,
 InputStream, InputStreamReader, StringReader}
+import java.nio.charset.Charset
 
 import org.apache.commons.io.IOUtils
 import org.apache.log4j.Logger
@@ -21,16 +22,20 @@ abstract class Content(val ctype: String, val length: Long) {
 }
 
 object StringContent {
-  val DefaultEncoding = System.getProperty("file.encoding")
+  def apply(
+      str: String
+      , ctype: String
+      , charsetName: String
+    ) = new StringContent(str, ctype, Charset.forName(charsetName))
 }
 
 case class StringContent(
     str: String
-    , override val ctype: String
-    , encoding: String = StringContent.DefaultEncoding
+    , override val ctype: String = "text/plain"
+    , charset: Charset = Charset.defaultCharset
   ) extends Content(ctype, str.size) {
 
-  override def createStream = new ByteArrayInputStream(str.getBytes(encoding))
+  override def createStream = new ByteArrayInputStream(str.getBytes(charset))
 
   override def toString = str;
 }
@@ -56,19 +61,21 @@ case class HtmlContent(val str: String) extends Content("text/html", str.getByte
   override def toString = str;
 }
 
-// TODO: Use this on the Response side.
-case class XmlContent(
-  xml: scala.xml.Node
-) extends Content("text/xml", xml.toString.getBytes("UTF-8").length) {
-
-  def this(str: String) =
-    this(
+object XmlContent {
+  def apply(string: String) = 
+    new XmlContent(
       try {
-        scala.xml.XML.loadString(str)
+        scala.xml.XML.loadString(string)
       } catch {
         case e:Exception => throw new IllegalArgumentException(e)
       }
     )
+}
+
+// TODO: Use this on the Response side.
+case class XmlContent(
+  xml: scala.xml.Node
+) extends Content("text/xml", xml.toString.getBytes("UTF-8").length) {
 
   override def createStream = {
     val bytes = xml.toString.getBytes("UTF-8");
