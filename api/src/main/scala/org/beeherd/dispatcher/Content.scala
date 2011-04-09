@@ -10,7 +10,6 @@ package org.beeherd.dispatcher
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, BufferedReader,
 InputStream, InputStreamReader, StringReader}
 
-import org.apache.commons.fileupload.MultipartStream
 import org.apache.commons.io.IOUtils
 import org.apache.log4j.Logger
 
@@ -27,9 +26,9 @@ object StringContent {
 
 case class StringContent(
     str: String
-    , contenttype: String
+    , override val ctype: String
     , encoding: String = StringContent.DefaultEncoding
-  ) extends Content(contenttype, str.size) {
+  ) extends Content(ctype, str.size) {
 
   override def createStream = new ByteArrayInputStream(str.getBytes(encoding))
 
@@ -104,36 +103,16 @@ case class Part(
   , val headers: List[(String, String)] = List()
 )
 
-case class MultiPartContent(parts: List[Part]) 
-extends Content("multipart/form-data", parts.foldLeft (0L) {case (sum, Part(_,_,c)) => sum + c.length}) {
-
-  // Consider replacing dependency on Apache Commons FileUpload with Apache Mime4j.
+case class MultiPartContent(
+    parts: List[Part]
+    , override val ctype: String = "multipart/form-data"
+  ) extends 
+Content(
+  ctype
+  , parts.foldLeft (0L) {case (sum, Part(_,_,c)) => sum + c.length}
+) {
 
   override def createStream = throw new UnsupportedOperationException("Cannot get a stream for multipart/form-data is not supported yet.");
-
-  /*
-  def part(headerName: String, headerValue: String): List[Part] = {
-    parts.filter {
-      p => p.headers.exists {
-        h => h._1.equalsIgnoreCase(headerName) && h._2.equalsIgnoreCase(headerValue)
-      }
-    }
-  }
-
-   * Look for a part by name.  This assumes that the name of a part is
-   * delivered as the substring ' name="partname"' of the Content-Disposition
-   * header.
-   * 
-   * @param name - The name of the desired part.
-   * @return a list of the parts whose name matches argument
-  def part(name: String): List[Part] = {
-    parts.filter {
-      p => p.headers.exists {
-        h => h._1.equalsIgnoreCase("Content-Disposition") && h._2.indexOf(" name=\"" + name + "\"") != -1
-      }
-    }
-  }
-   */
 }
 
 
