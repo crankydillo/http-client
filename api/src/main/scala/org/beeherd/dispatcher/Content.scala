@@ -233,26 +233,5 @@ class ContentCreator {
 
   private def createMultiPartContent(in: InputStream, contentType: String): Option[MultiPartContent] = { 
     throw new UnsupportedOperationException("MultipartContent not supported yet.");
-    /*
-    val stream = {
-      if (ContentCreator.log.isDebugEnabled) {
-        val bytes = IOUtils.toByteArray(in);
-        ContentCreator.log.debug("Multipart/form-data request's body contained " + bytes.length + " bytes.");
-        val str = new String(bytes);
-
-        ContentCreator.log.debug("Multipart/form-data request's body")
-        ContentCreator.log.debug("----------------------------------")
-        ContentCreator.log.debug(str)
-        new ByteArrayInputStream(bytes)
-      } else {
-        in
-      }
-    }
-    // TODO: Handle invalid headers
-    val boundaryIndex = contentType.indexOf("boundary=");
-    val boundaryString = contentType.substring(boundaryIndex + 9);
-    val boundary = boundaryString.getBytes;
-    Some(MultiPartContent(stream, boundary));
-    */
   }   
 }
