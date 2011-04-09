@@ -21,9 +21,17 @@ abstract class Content(val ctype: String, val length: Long) {
   def createStream: InputStream
 }
 
-// TODO: Handle encodings properly...
-case class StringContent(val str: String, contenttype: String) extends Content(contenttype, str.size) {
-  override def createStream = new ByteArrayInputStream(str.getBytes)
+object StringContent {
+  val DefaultEncoding = System.getProperty("file.encoding")
+}
+
+case class StringContent(
+    str: String
+    , contenttype: String
+    , encoding: String = StringContent.DefaultEncoding
+  ) extends Content(contenttype, str.size) {
+
+  override def createStream = new ByteArrayInputStream(str.getBytes(encoding))
 
   override def toString = str;
 }
