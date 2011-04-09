@@ -1,6 +1,7 @@
 package org.beeherd.http.client
 
 import java.io._
+import java.nio.charset.Charset
 import java.text.DecimalFormat
 import java.util.concurrent.TimeUnit
 
@@ -328,18 +329,24 @@ class HttpDispatcher(
 
     def toEntity(content: Content): (Headers, HttpEntity) = {
       content match {
-        case StringContent(str, ctype) => (Map(), new StringEntity(str, ctype))
+        case StringContent(str, ctype, charset) => 
+          (Map(), new StringEntity(str, ctype, charset.name))
         case XmlContent(xml) =>
-          (Map("Content-Type" -> "text/xml"), new StringEntity(xml.toString, "UTF-8"));
-        case MultiPartContent(parts) => 
+          (
+              Map("Content-Type" -> "text/xml")
+              , new StringEntity(xml.toString, "UTF-8")
+            )
+        case MultiPartContent(parts, _) => 
           val entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
           parts.foreach {p => 
             val name = p.name;
             entity.addPart(
               name
               , p.content match {
-                case StringContent(str, enc) => new StringBody(str)
-                case XmlContent(xml) => new StringBody(xml.toString)
+                case StringContent(str, ctype, charset) => 
+                  new StringBody(str, ctype, charset)
+                case XmlContent(xml) => 
+                  new StringBody(xml.toString, Charset.forName("UTF-8"))
                 case ByteArrayContent(bytes) => new ByteArrayBody(bytes, name)
                 case _ => new KnownLengthInputStreamBody(
                   new InputStreamBody(p.content.createStream, p.content.ctype)
