@@ -17,7 +17,7 @@ class HttpRequest(
 
 object HttpRequest {
 
-  lazy val UrlRegex = """([A-Za-z]+)://(\w+(\.\w+)*)(:(\d+))?(.*)""".r
+  lazy val UrlRegex = """(([A-Za-z]+)://)?(\w+(\.\w+)*)(:(\d+))?(.*)""".r
 
   def unapply(request: HttpRequest): Option[(List[String], RequestMethod.Value)] = {
     if (request == null)
@@ -41,13 +41,18 @@ object HttpRequest {
   * @param url
   */
   def parseUrl(url: String): (String, String, Int, String) = {
-    val UrlRegex(protocol, host, _, _, port, path) = url
-    (
-      protocol
-      , host
-      , if (port == null) 80 else port.toInt
-      , if (path == null) "" else path
-    )
+    try {
+      val UrlRegex(_, protocol, host, _, _, port, path) = url
+      (
+        if (protocol == null) "http" else protocol
+        , host
+        , if (port == null) 80 else port.toInt
+        , if (path == null) "" else path
+      )
+    } catch {
+      case e:MatchError => throw new IllegalArgumentException(url + 
+        " cannot be parsed as a URL.")
+    }
   }
 }
 

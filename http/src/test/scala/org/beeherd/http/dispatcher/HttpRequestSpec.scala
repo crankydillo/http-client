@@ -40,6 +40,11 @@ object HttpRequestSpec extends Specification {
       parseUrl("http://beeherd.org/foo/bar") must beEqual(
         ("http", "beeherd.org", 80, "/foo/bar"))
     }
+
+    "default to http protocol" in {
+      parseUrl("beeherd.org") must beEqual(
+        ("http", "beeherd.org", 80, ""))
+    }
   }
 
   "The RequestMethod object" should {
