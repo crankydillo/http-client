@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
 import org.apache.commons.io.IOUtils
 import org.apache.http.HttpResponse
 import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
-import org.apache.http.client.{ResponseHandler, HttpClient => ApacheHttpClient, HttpResponseException}
+import org.apache.http.client.{HttpClient => ApacheHttpClient, HttpResponseException}
 import org.apache.http.client.methods.{HttpGet, HttpPost, HttpPut, HttpDelete}
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{BasicResponseHandler, DefaultHttpClient}

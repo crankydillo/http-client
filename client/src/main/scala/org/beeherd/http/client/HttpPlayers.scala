@@ -108,7 +108,21 @@ class Operation(
     val request: HttpRequest
     , val handler: Option[(Response => Seq[Operation])] = None
     , val context: Option[String] = None
-  )
+  ) {
+
+  def this(request: HttpRequest, handler: ResponseHandler, context: String) =
+    this(
+      request
+      , if (handler == null) None
+        else Some(handler.handle _)
+      , if (context == null) None
+        else Some(context)
+    )
+}
+
+trait ResponseHandler {
+  def handle(resp: Response): Seq[Operation]
+}
 
 // TODO: Seriously consider just carrying around Request/Response instances....
 sealed abstract class Tracked(

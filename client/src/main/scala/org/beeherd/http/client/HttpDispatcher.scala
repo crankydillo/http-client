@@ -9,7 +9,7 @@ import org.apache.commons.io.IOUtils
 
 import org.apache.http.HttpEntity
 import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
-import org.apache.http.client.{ResponseHandler, HttpClient => ApacheHttpClient, HttpResponseException}
+import org.apache.http.client.{HttpClient => ApacheHttpClient, HttpResponseException}
 import org.apache.http.client.methods.{HttpGet, HttpPost, HttpPut, HttpDelete}
 import org.apache.http.entity._
 import org.apache.http.entity.mime._
