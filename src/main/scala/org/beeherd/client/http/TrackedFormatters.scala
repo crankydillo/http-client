@@ -14,7 +14,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.beeherd.http.client
+package org.beeherd.client.http
 
 /**
 * Implementations of this trait will format DResponses in various ways.

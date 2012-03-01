@@ -44,8 +44,8 @@ object App {
           new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
 
       val cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-      val client = new DefaultHttpClient(cm, params);
-      val client = new HttpClient(client);
+      val apacheClient = new DefaultHttpClient(cm, params);
+      val client = new HttpClient(apacheClient);
 
       val player = new DelayingHttpPlayer(client, 10)
       try {
@@ -68,7 +68,7 @@ object App {
         }
         */
       } finally {
-        client.getConnectionManager.shutdown();
+        apacheClient.getConnectionManager.shutdown();
       }
     } catch {
       case t:Throwable => t.printStackTrace

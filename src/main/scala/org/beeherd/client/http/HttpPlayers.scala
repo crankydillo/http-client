@@ -14,7 +14,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.beeherd.http.client
+package org.beeherd.client.http
 
 import java.net.SocketTimeoutException
 
@@ -70,7 +70,7 @@ class DelayingHttpPlayer(
         )
 
       try {
-        val resp = client.dispatch(op.request);
+        val resp = client.submit(op.request);
         val respTime = now - start;
 
         val tracked = DResponse(

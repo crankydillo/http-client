@@ -38,7 +38,7 @@ object HttpClient {
   * @return Response
   */
   def submit(req: HttpRequest, timeout: Int = DefaultTimeout): Response = 
-    useClient{ _.submit(req) }
+    useClient(timeout) { _.submit(req) }
 
   /**
   * Sets up all state for issuing a get and handles all the tear down.
@@ -55,15 +55,16 @@ object HttpClient {
     , params: Map[String, String] = Map()
     , headers: Map[String, List[String]] = Map()
     , timeout: Int = DefaultTimeout
-  ): Response = useClient { _.get(url, params, headers) }
+  ): Response = useClient(timeout) { _.get(url, params, headers) }
 
-  private def useClient(f: (HttpClient) => Response): Response = {
+  private def useClient(timeout: Int = DefaultTimeout)
+  (f: (HttpClient) => Response): Response = {
     val apacheClient = createClient(timeout);
     val client = new HttpClient(apacheClient);
     try {
       f(client);
     } finally {
-      client.getConnectionManager.shutdown();
+      apacheClient.getConnectionManager.shutdown();
     }
   }
 
