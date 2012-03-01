@@ -34,14 +34,6 @@
     </dependency>
   </dependencies>
 
-  <repositories>
-    <repository>
-      <id>scala-tools.org - snapshots</id>
-      <name>Scala-Tools Maven2 Repository - snapshots</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-    </repository>
-  </repositories>
-  
   <build>
     <plugins>
       <plugin>
