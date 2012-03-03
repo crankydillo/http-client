@@ -5,7 +5,7 @@
   <artifactId>http-client</artifactId>
   <version>0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Dispatcher</name>
+  <name>HTTP Client</name>
   <dependencies>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
