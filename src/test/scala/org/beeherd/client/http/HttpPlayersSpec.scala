@@ -36,7 +36,7 @@ object HttpPlayerSpec extends Specification with Mockito {
         DResponse(url, RequestMethod.Post, None, 1, CreatedResponse(url), 1)
 
       def ok() = 
-        DResponse("http://hi", RequestMethod.Get, None, 1, OkResponse(), 1)
+        DResponse("http://hi", RequestMethod.Get, None, 1, OkResponse, 1)
 
       underlying.play(anyObject()) returns {
           Seq(

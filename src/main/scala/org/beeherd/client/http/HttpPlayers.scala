@@ -209,6 +209,3 @@ class CreationTrackingPlayer(underlying: HttpPlayer) extends HttpPlayer {
   */
   def createdUrls = createdUrlss.toSeq
 }
-
-
-

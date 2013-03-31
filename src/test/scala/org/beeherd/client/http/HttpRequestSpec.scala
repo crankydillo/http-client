@@ -45,6 +45,11 @@ object HttpRequestSpec extends Specification {
       parseUrl("beeherd.org") must beEqual(
         ("http", "beeherd.org", 80, ""))
     }
+
+    "default the port to 443 if the protocol is https" in {
+      parseUrl("https://beeherd") must beEqual(
+        ("https", "beeherd", 443, ""))
+    }
   }
 
   "The RequestMethod object" should {

@@ -115,9 +115,10 @@ class HttpClient(
     } catch {
       case e:HttpResponseException => {
         e.getStatusCode match {
-          case 404 => NotFoundResponse();
-          case 403 => ForbiddenResponse(e.getMessage);
-          case _ => InternalErrorResponse(e); // For now, just use this to wrap anything else
+          case 400 => BadResponse(e.getMessage)
+          case 404 => NotFoundResponse
+          case 403 => ForbiddenResponse(e.getMessage)
+          case _ => InternalErrorResponse(e) // For now, just use this to wrap anything else
         }
       }
       case e:Exception => {
@@ -188,7 +189,7 @@ class HttpClient(
         response.getEntity.consumeContent;
       response.getHeaders("Location") match {
         case Array(fst, rest @_*) => CreatedResponse(fst.getValue)
-        case _ => OkResponse()
+        case _ => OkResponse
       }
     } catch {
       case e:Exception => {
@@ -213,7 +214,7 @@ class HttpClient(
         response.getEntity.consumeContent;
       response.getHeaders("Location") match {
         case Array(fst, rest @_*) => CreatedResponse(fst.getValue)
-        case _ => OkResponse()
+        case _ => OkResponse
       }
     } catch {
       case e:Exception => {
@@ -231,7 +232,7 @@ class HttpClient(
       if (response.getEntity != null)
         response.getEntity.consumeContent;
       val body = handler.handleResponse(response);
-      OkResponse()
+      OkResponse
     } catch {
       case e:Exception => {
         meth.abort;

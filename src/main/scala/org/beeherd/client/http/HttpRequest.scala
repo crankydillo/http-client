@@ -46,7 +46,9 @@ object HttpRequest {
       (
         if (protocol == null) "http" else protocol
         , host
-        , if (port == null) 80 else port.toInt
+        , if (port != null) port.toInt
+          else if (protocol == "https") 443 
+          else 80
         , if (path == null) "" else path
       )
     } catch {

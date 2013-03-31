@@ -60,7 +60,7 @@ class Response(val code: Int
 
 // Case classes appear to be controversial.  You can probably safely think of
 // these as extensions that allow pattern matching.
-case class OkResponse() extends Response(200, None, Nil)
+case object OkResponse extends Response(200, None, Nil)
 
 case class CreatedResponse(
     url: String
@@ -94,11 +94,14 @@ case class ByteResponse(bytes: Array[Byte]) extends Response(200,
     Some(ByteArrayContent(bytes)), Nil
   )
 
-case class StreamedResponse(val ctent: StreamedContent) extends Response(200,
+case class StreamedResponse(ctent: StreamedContent) extends Response(200,
     Some(ctent), Nil
   )
+
+case class BadResponse(msg: String) extends Response(400,
+    Some(StringContent(msg, "text/plain")), Nil)
     
-case class NotFoundResponse() extends Response(404, None, Nil)
+case object NotFoundResponse extends Response(404, None, Nil)
 
 case class ForbiddenResponse(msg: String) extends Response(403, 
     Some(StringContent(msg, "text/plain")), Nil
