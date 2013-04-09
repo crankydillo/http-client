@@ -6,11 +6,13 @@ import java.text.DecimalFormat
 import java.util.concurrent.TimeUnit
 
 import org.apache.commons.io.IOUtils
+import org.apache.log4j.Logger
 
 import org.apache.http.HttpEntity
 import org.apache.http.conn.scheme.{Scheme, SchemeRegistry, PlainSocketFactory}
 import org.apache.http.client.{HttpClient => ApacheHttpClient, HttpResponseException}
 import org.apache.http.client.methods.{HttpGet, HttpPost, HttpPut, HttpDelete}
+import org.apache.http.client.utils.URIBuilder
 import org.apache.http.entity._
 import org.apache.http.entity.mime._
 import org.apache.http.entity.mime.content._
@@ -27,6 +29,7 @@ import org.beeherd.client._
 * @author scox
 */
 object HttpClient {
+  val Log = Logger.getLogger(classOf[HttpClient])
   val DefaultTimeout = 15000
 
   /**
@@ -100,12 +103,15 @@ class HttpClient(
     client: ApacheHttpClient
     , showProgress: Boolean = false
   ) {
-
+  import HttpClient.Log
   type Headers = Map[String, String]
 
   private val converter = new HttpConverter(showProgress); // compose!
 
   def submit(req: HttpRequest): Response = {
+    if (Log.isDebugEnabled)
+      Log.debug(logMessage(req))
+
     try {
       req match {
           case HttpRequest(_, RequestMethod.Get) => get_h(req);
@@ -147,20 +153,33 @@ class HttpClient(
     )
   }
 
+  private def logMessage(req: HttpRequest): String = {
+    val str = new StringBuilder("\n")
+    str.append(req.method).append(" ").append(req.url).append("\n\n")
+    str.append("Parameters\n")
+    str.append("----------\n")
+    str.append(req.params.map { case (p, v) => p + ": " + v}.mkString("\n"))
+    str.append("\n\n")
+    str.append("Headers\n")
+    str.append("-------\n")
+    str.append(req.headers.map { case (p, vs) => 
+      p + ": " + vs.mkString(",")}.mkString("\n"))
+    str.toString
+  }
+
   private def get_h(req: HttpRequest): Response = {
-    val meth = new HttpGet(req.url)
+    val builder = new URIBuilder(req.url)
+    req.params.foreach { case (p, v) => 
+      builder.addParameter(p, v) 
+    }
+    val meth = new HttpGet(builder.build)
+    req.headers.foreach {case (name, values) =>
+      values.foreach {v => meth.addHeader(name, v)}
+    }
 
     try {
-      val params = meth.getParams;
-      req.params.foreach {e => params.setParameter(e._1, e._2)}
-
-      req.headers.foreach {case (name, values) =>
-        values.foreach {v => meth.addHeader(name, v)}
-      }
-
       val response = client.execute(meth);
       converter.convert(response);
-
     } catch {
       case e:Exception => {
         meth.abort;
@@ -371,7 +390,6 @@ class HttpClient(
     def getInputStream = delegate.getInputStream
     def getTransferEncoding = delegate.getTransferEncoding
     def writeTo(out: OutputStream) = delegate.writeTo(out)
-    def writeTo(out: OutputStream, mode: Int) = delegate.writeTo(out, mode)
     def getMediaType = delegate.getMediaType
     def getMimeType = delegate.getMimeType
     def getSubType = delegate.getSubType
